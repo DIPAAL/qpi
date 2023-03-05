@@ -1,10 +1,10 @@
+"""Module to create GIFs/MP4s from rasters in the database."""
+
 import io
 import os
 
 import imageio.v2 as imageio
-import matplotlib
 import numpy as np
-import psycopg2
 import rasterio as rio
 from matplotlib import colors
 from rasterio.plot import show
@@ -15,7 +15,9 @@ from qpi.helper_functions import get_connection
 conn = get_connection()
 
 query = """
-SELECT dd.year AS year, dd.month_of_year AS month, dd.day_of_month AS day, ST_AsGDALRaster(ST_Union(dr.rast), 'COG') AS raster
+SELECT
+    dd.year AS year, dd.month_of_year AS month, dd.day_of_month AS day,
+    ST_AsGDALRaster(ST_Union(dr.rast), 'COG') AS raster
 FROM fact_cell_heatmap
 JOIN dim_raster dr on fact_cell_heatmap.raster_id = dr.raster_id
 JOIN dim_date dd on fact_cell_heatmap.date_id = dd.date_id
@@ -45,6 +47,15 @@ sattelite = rio.open("references/danish_waters_3034.tiff")
 
 
 def make_frame(f: str) -> io.BytesIO:
+    """
+    Create a PNG frame for a given file.
+
+    Keyword arguments:
+        f: the file to create a frame for
+
+    Returns:
+        a BytesIO object containing the PNG frame
+    """
     with rio.open(f) as raster:
         fig, ax = plt.subplots(figsize=(20, 10))
 
@@ -54,18 +65,11 @@ def make_frame(f: str) -> io.BytesIO:
         # use a logarithmic colormap to show raster
         show(raster, ax=ax, cmap='turbo', norm=colors.LogNorm(vmin=1))
 
-
-
         # swarp the y axis
         ax.set_ylim(ax.get_ylim()[::-1])
 
         # add a title
         ax.set_title(f)
-
-        # add a legend
-        # sm = plt.cm.ScalarMappable(cmap="RdYlGn", norm=plt.Normalize(vmin=0, vmax=100))
-        # sm._A = []
-        # cbar = fig.colorbar(sm)
 
         buffer = io.BytesIO()
         plt.savefig(buffer, format='png')
