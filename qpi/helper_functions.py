@@ -1,4 +1,4 @@
-"""Helper functions for the ETL process."""
+"""Helper functions for Query Processing."""
 import configparser
 import os
 from datetime import datetime, timedelta
