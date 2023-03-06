@@ -65,7 +65,7 @@ def make_frame(f: str) -> io.BytesIO:
         # use a logarithmic colormap to show raster
         show(raster, ax=ax, cmap='turbo', norm=colors.LogNorm(vmin=1))
 
-        # swarp the y axis
+        # invert the y axis
         ax.set_ylim(ax.get_ylim()[::-1])
 
         # add a title
