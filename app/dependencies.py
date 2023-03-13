@@ -1,3 +1,5 @@
+"""Dependencies used by the API endpoints."""
+
 from qpi.helper_functions import get_connection
 from constants import ROOT_DIR
 from enum import Enum
@@ -9,6 +11,8 @@ CURSOR = CONN.cursor()
 
 
 class DWTable(str, Enum):
+    """All data warehouse tables."""
+
     dim_cell_50m = "dim_cell_50m"
     dim_cell_200m = "dim_cell_200m"
     dim_cell_1000m = "dim_cell_1000m"
@@ -31,11 +35,14 @@ class DWTable(str, Enum):
 
 
 class MiscTable(str, Enum):
+    """All miscellaneous tables."""
+
     audit_log = "audit_log"
     benchmark_result = "benchmark_result"
 
 
 def readfile(path_from_root):
+    """Read a file from the root directory."""
     path = os.path.join(ROOT_DIR, f'{path_from_root}')
     with open(path, "r") as f:
         return f.read()
