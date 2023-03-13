@@ -1,4 +1,4 @@
-"""All global constants are defined here."""
+"""Exports constants used in the project."""
 
 import os
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__)))

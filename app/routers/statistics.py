@@ -1,4 +1,4 @@
-"""FastAPI router for statistics endpoints."""
+"""FastAPI router for statistical endpoints."""
 from fastapi import APIRouter
 from ..dependencies import CURSOR, readfile
 

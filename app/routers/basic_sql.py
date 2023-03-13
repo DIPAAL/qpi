@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter
 from app.dependencies import CURSOR, DWTable
-# from pydantic import BaseModel
 
 
 router = APIRouter()
