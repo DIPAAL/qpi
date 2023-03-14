@@ -75,6 +75,13 @@ def get_config():
     return config
 
 
+def readfile(path_from_root):
+    """Read a file from the root directory."""
+    path = os.path.join(ROOT_DIR, f'{path_from_root}')
+    with open(path, "r") as f:
+        return f.read()
+
+
 def get_connection():
     """
     Return a connection to the database.

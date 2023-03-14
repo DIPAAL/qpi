@@ -1,29 +1,31 @@
 """FastAPI router for basic SQL queries."""
 
-from fastapi import APIRouter
-from app.dependencies import CURSOR, DWTable
+from fastapi import APIRouter, Depends
+from ..dependencies import get_dw_cursor
+from ..constants import DWTABLE
 
 
 router = APIRouter()
 
 
 @router.get("/count_row_table/{table}")
-def count_row_table(table: DWTable):
+def count_row_table(table: DWTABLE, dw_cursor = Depends(get_dw_cursor)):
     """
     Count the number of rows in a table.
 
     Args:
+        dw_cursor: A cursor to the data warehouse database
         table: A table in the database
 
     Returns:
         The number of rows in the table
     """
-    CURSOR.execute(f"SELECT COUNT(*) FROM {table}")
-    return CURSOR.fetchall()
+    dw_cursor.execute(f"SELECT COUNT(*) FROM {table}")
+    return dw_cursor.fetchall()
 
 
 @router.get("/get_coloumn_names/{table}")
-def get_column_names(table: DWTable):
+def get_column_names(table: DWTABLE, dw_cursor = Depends(get_dw_cursor)):
     """
     Get the column names of a table.
 
@@ -33,5 +35,5 @@ def get_column_names(table: DWTable):
     Returns:
         A list of column names
     """
-    CURSOR.execute(f"SELECT * FROM {table} LIMIT 0")
-    return [desc[0] for desc in CURSOR.description]
+    dw_cursor.execute(f"SELECT * FROM {table} LIMIT 0")
+    return [desc[0] for desc in dw_cursor.description]

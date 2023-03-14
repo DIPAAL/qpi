@@ -10,7 +10,7 @@ from matplotlib import colors
 from rasterio.plot import show
 import matplotlib.pyplot as plt
 
-from qpi.helper_functions import get_connection
+from helper_functions import get_connection
 
 conn = get_connection()
 

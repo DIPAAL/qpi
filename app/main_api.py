@@ -6,7 +6,7 @@ from .routers import basic_sql, raster, statistics
 app = FastAPI()
 localIP = socket.gethostbyname(socket.gethostname())
 
-# Include the routers from the router folder
+# Include all routers from the router folder
 app.include_router(basic_sql.router)
 app.include_router(raster.router)
 app.include_router(statistics.router)
