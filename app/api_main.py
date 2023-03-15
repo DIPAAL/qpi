@@ -19,8 +19,7 @@ app.include_router(statistics.router)
 @app.get("/")
 def root():
     """Root endpoint. Returns a message with the IP address of the QPI and a warning."""
-    return {"Message": "Hello, i am the Query Processing Interface (QPI) for DIPALL! "
-                       f"To see the full documentation for QPI, please visit {localIP}:8000/docs "
+    return {"Message": "Hello, i am the Query Processing Interface (QPI) for DIPAAL! "
                        "Please be careful when using the SQL endpoints, as they are not protected."}
 
 
@@ -28,17 +27,3 @@ def root():
 def health():
     """Heartbeat endpoint. Returns a status message."""
     return {"status": "ok"}
-
-
-@app.get("/test/{text}")
-def test(text: str):
-    """
-    Test endpoint. Returns the text that was passed to the endpoint.
-
-    Args:
-        text: The text to return
-
-    Returns:
-        The text that was passed to the endpoint
-    """
-    return {"status": f"{text}"}
