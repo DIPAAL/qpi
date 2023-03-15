@@ -26,7 +26,7 @@ def root():
 
 @app.get("/health")
 def health():
-    """Heartbeat endpoint. Returns a status message."""
+    """Heartbeat endpoint. Returns status message 'ok'."""
     return {"status": "ok"}
 
 
