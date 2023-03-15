@@ -46,7 +46,7 @@ FROM reference,
                JOIN dim_date dd on fch.date_id = dd.date_id
                JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
       WHERE fch.spatial_resolution = 1000
-        AND fch.heatmap_type_id = 1
+        AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE name = 'count')
         AND dst.mobile_type = 'Class B'
         AND fch.temporal_resolution_sec = 86400
       GROUP BY dd.year, dd.month_of_year, dd.day_of_month) sq1;
