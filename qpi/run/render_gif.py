@@ -99,7 +99,7 @@ def make_frame(f: str) -> io.BytesIO:
     Create a PNG frame for a given file.
 
     Keyword arguments:
-        f: the file to create a frame for
+        f: the path to the raster file to create a frame for
 
     Returns:
         a BytesIO object containing the PNG frame
