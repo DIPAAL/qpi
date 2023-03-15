@@ -105,7 +105,7 @@ def make_frame(f: str) -> io.BytesIO:
         a BytesIO object containing the PNG frame
     """
     with rio.open(f) as raster:
-        fig, ax = plt.subplots(figsize=(17, 10))
+        fig, ax = plt.subplots(figsize=fig_size)
         show(
             sattelite,
             ax=ax,
