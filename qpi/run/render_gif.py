@@ -85,7 +85,7 @@ dpi = 100
 fig_width = fig_size[0] * dpi
 fig_height = fig_size[1] * dpi
 
-# resize the logos to 30% of the figure's width, but keep aspect ratio
+# Resize the logos to max 30% if the width or 20% of the height, except DIPAAL which is 30% of the height
 aau_logo.thumbnail((fig_width*0.3, fig_height*0.2), Image.LANCZOS)
 aau_logo = np.asarray(aau_logo)
 daisy_logo.thumbnail((fig_width*0.3, fig_height*0.2), Image.LANCZOS)
@@ -112,14 +112,14 @@ def make_frame(f: str) -> io.BytesIO:
             origin='upper',)
 
         # use a logarithmic colormap to show raster
-        retted = show(
+        plot = show(
             raster,
             ax=ax, cmap='turbo',
             norm=colors.LogNorm(clip=True),
             interpolation='none',
         )
 
-        im = retted.get_images()[1]
+        im = plot.get_images()[1]
         fig.colorbar(im, ax=ax, orientation='horizontal', pad=0.06, shrink=0.5)
 
         ax.set_ylim(ax.get_ylim()[::-1])
