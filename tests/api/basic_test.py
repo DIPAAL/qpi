@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from app.main_api import app
+from app.api_main import app
 from app.dependencies import get_dw_cursor
 
 def override_get_dw_cursor():

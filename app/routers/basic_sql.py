@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 from ..dependencies import get_dw_cursor
-from ..constants import DWTABLE
+from ..api_constants import DWTABLE
 
 
 router = APIRouter()
@@ -30,6 +30,7 @@ def get_column_names(table: DWTABLE, dw_cursor = Depends(get_dw_cursor)):
     Get the column names of a table.
 
     Args:
+        dw_cursor: A cursor to the data warehouse database
         table: A table in the database
 
     Returns:

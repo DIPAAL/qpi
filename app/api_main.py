@@ -1,4 +1,5 @@
-"""Main API file for QPI. This file contains the FastAPI app and the routers for the different endpoints."""
+"""Main API file for QPI. This file contains the FastAPI app and the routers for the different endpoints.
+Note: Does not get called as main"""
 from fastapi import FastAPI
 import socket
 from .routers import basic_sql, raster, statistics
