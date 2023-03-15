@@ -1,5 +1,8 @@
-"""Main API file for QPI. This file contains the FastAPI app and the routers for the different endpoints.
-Note: Does not get called as main"""
+"""
+Main API file for QPI. This file contains the FastAPI app and the routers for the different endpoints.
+
+Note: Does not get called as main when called with uvicorn.
+"""
 from fastapi import FastAPI
 import socket
 from .routers import basic_sql, raster, statistics

@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.get("/count_row_table/{table}")
-def count_row_table(table: DWTABLE, dw_cursor = Depends(get_dw_cursor)):
+def count_row_table(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Count the number of rows in a table.
 
@@ -25,7 +25,7 @@ def count_row_table(table: DWTABLE, dw_cursor = Depends(get_dw_cursor)):
 
 
 @router.get("/get_coloumn_names/{table}")
-def get_column_names(table: DWTABLE, dw_cursor = Depends(get_dw_cursor)):
+def get_column_names(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Get the column names of a table.
 
