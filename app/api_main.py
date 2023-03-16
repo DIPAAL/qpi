@@ -5,7 +5,7 @@ Note: Does not get called as main when called with uvicorn.
 """
 from fastapi import FastAPI
 import socket
-from .routers import basic_sql, raster, statistics
+from .routers import basic_sql, raster
 from starlette.responses import RedirectResponse
 
 app = FastAPI()
@@ -14,7 +14,6 @@ localIP = socket.gethostbyname(socket.gethostname())
 # Include all routers from the router folder
 app.include_router(basic_sql.router)
 app.include_router(raster.router)
-app.include_router(statistics.router)
 
 
 @app.get("/")
