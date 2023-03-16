@@ -19,7 +19,7 @@ def table():
     return [table.value for table in DWTABLE]
 
 
-@router.get("/{table}/count_rows")
+@router.get("/{table}/count")
 def count_rows(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Count the number of rows in a table.
@@ -35,7 +35,7 @@ def count_rows(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     return dw_cursor.fetchall()
 
 
-@router.get("/{table}/column_names")
+@router.get("/{table}/columns")
 def column_names(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Get the column names of a table.

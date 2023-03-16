@@ -4,12 +4,10 @@ Main API file for QPI. This file contains the FastAPI app and the routers for th
 Note: Does not get called as main when called with uvicorn.
 """
 from fastapi import FastAPI
-import socket
 from .routers import router_main
 from starlette.responses import RedirectResponse
 
 app = FastAPI()
-localIP = socket.gethostbyname(socket.gethostname())
 
 # Include main router, which includes all other routers
 app.include_router(router_main.router_main)
