@@ -11,7 +11,7 @@ from starlette.responses import RedirectResponse
 app = FastAPI()
 localIP = socket.gethostbyname(socket.gethostname())
 
-# Include all routers from the router folder
+# Include main router, which includes all other routers
 app.include_router(router_main.router_main)
 
 
