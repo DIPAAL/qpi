@@ -6,8 +6,7 @@ Note: Does not get called as main when called with uvicorn.
 from fastapi import FastAPI
 import socket
 from .routers import basic_sql, raster, statistics
-from .dependencies import get_dw_cursor
-import psycopg2
+from starlette.responses import RedirectResponse
 
 app = FastAPI()
 localIP = socket.gethostbyname(socket.gethostname())
@@ -20,9 +19,8 @@ app.include_router(statistics.router)
 
 @app.get("/")
 def root():
-    """Root endpoint. Returns a message with the IP address of the QPI and a warning."""
-    return {"Message": "Hello, i am the Query Processing Interface (QPI) for DIPAAL! "
-                       "Please be careful when using the SQL endpoints, as they are not protected."}
+    """Root endpoint. Redirects to the documentation."""
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/health")
