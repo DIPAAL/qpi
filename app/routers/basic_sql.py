@@ -7,8 +7,7 @@ from ..api_constants import DWTABLE
 
 router = APIRouter()
 
-
-@router.get("/count_row_table/{table}")
+@router.get("api/v1/misc/{table}/count_rows")
 def count_row_table(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Count the number of rows in a table.
@@ -24,7 +23,7 @@ def count_row_table(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     return dw_cursor.fetchall()
 
 
-@router.get("/get_coloumn_names/{table}")
+@router.get("api/v1/misc/{table}/column_names")
 def get_column_names(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Get the column names of a table.

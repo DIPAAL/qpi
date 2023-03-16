@@ -6,6 +6,8 @@ Note: Does not get called as main when called with uvicorn.
 from fastapi import FastAPI
 import socket
 from .routers import basic_sql, raster, statistics
+from .dependencies import get_dw_cursor
+import psycopg2
 
 app = FastAPI()
 localIP = socket.gethostbyname(socket.gethostname())
