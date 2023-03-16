@@ -9,7 +9,6 @@ from .routers import router_main
 from starlette.responses import RedirectResponse
 
 app = FastAPI()
-localIP = socket.gethostbyname(socket.gethostname())
 
 # Include main router, which includes all other routers
 app.include_router(router_main.router_main)
