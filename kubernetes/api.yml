@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dipaal-api-deployment
+  labels:
+    app: dipaal-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dipaal-api
+  template:
+    metadata:
+      labels:
+        app: dipaal-api
+    spec:
+      containers:
+      - name: api
+        image: ${IMAGE_NAME}
+        command: uvicorn app.api_main:app
+        imagePullPolicy: IfNotPresent
+      - name: cloudflare
+        image: firecow/cloudflared:2022.8.0-1
+        env:
+          - name: TUNNEL_HOSTNAME
+            value: https://dipaal.dk
+          - name: TUNNEL_URL
+            value: http://localhost:8000
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: cloudflare-cert
+            mountPath: /etc/cloudflared/cert.pem
+            subPath: cert.pem
+      volumes:
+         - name: cloudflare-cert
+           secret:
+             secretName: dipaal-cloudflare-cert
