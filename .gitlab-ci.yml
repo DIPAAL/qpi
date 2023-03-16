@@ -89,7 +89,7 @@ deploy-api:
     name: registry.gitlab.com/shipquerymasters/utils:0.0.3
     entrypoint: ['']
   script:
-    - export IMAGE_NAME=$CI_REGISTRY_IMAGE:${CI_COMMIT_TAG:-$CI_PIPELINE_ID}
+    - export IMAGE_NAME=$CI_REGISTRY_IMAGE:${CI_COMMIT_TAG:-dev-$CI_PIPELINE_ID}
     - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
     - envsubst < kubernetes/api.yml | kubectl apply -f -
   when: manual
