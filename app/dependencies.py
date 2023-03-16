@@ -5,4 +5,5 @@ from helper_functions import get_connection
 def get_dw_cursor():
     """Return a cursor to the data warehouse database."""
     conn = get_connection()
-    return conn.cursor
+    cursor = conn.cursor()
+    return cursor
