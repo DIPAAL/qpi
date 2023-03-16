@@ -1,13 +1,14 @@
 """FastAPI router for basic SQL queries."""
 
 from fastapi import APIRouter, Depends
-from ..dependencies import get_dw_cursor
-from ..api_constants import DWTABLE
+from app.dependencies import get_dw_cursor
+from app.api_constants import DWTABLE
 
 
 router = APIRouter()
 
-@router.get("/api/v1/table")
+
+@router.get("/")
 def table():
     """
     Get a list of tables in the database.
@@ -18,7 +19,7 @@ def table():
     return [table.value for table in DWTABLE]
 
 
-@router.get("/api/v1/table/{table}/count_rows")
+@router.get("/{table}/count_rows")
 def count_rows(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Count the number of rows in a table.
@@ -34,7 +35,7 @@ def count_rows(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     return dw_cursor.fetchall()
 
 
-@router.get("/api/v1/table/{table}/column_names")
+@router.get("/{table}/column_names")
 def column_names(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     """
     Get the column names of a table.
