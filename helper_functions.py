@@ -109,6 +109,7 @@ def get_connection():
     )
 
 def create_session_to_dw():
+    config = get_config()
     database = config['Database']['database']
     user = config['Database']['user']
     password = config['Database']['password']
