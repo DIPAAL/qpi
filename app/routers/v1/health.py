@@ -1,4 +1,4 @@
-"""FastAPI router for basic SQL queries."""
+"""FastAPI router for health check query."""
 
 from fastapi import APIRouter
 from app.dependencies import get_dw_cursor
