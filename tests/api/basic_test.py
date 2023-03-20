@@ -12,6 +12,6 @@ app.dependency_overrides[get_dw_cursor] = override_get_dw_cursor
 
 def test_heartbeat():
     with TestClient(app) as client:
-        response = client.get("/health")
+        response = client.get("/api/v1/health")
         assert response.status_code == 200
         assert response.json() == {"status": "ok"}
