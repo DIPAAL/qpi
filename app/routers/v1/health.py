@@ -8,9 +8,7 @@ router = APIRouter()
 
 @router.get("")
 def health():
-    """
-    Checks the health of the API, for now just checks if database is reachable.
-    """
+    """Check the health of the API, for now just checks if database is reachable."""
     query = "SELECT 1"
     dw_cursor = get_dw_cursor()
 

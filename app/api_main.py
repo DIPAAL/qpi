@@ -21,6 +21,7 @@ def root():
 
 
 def custom_openapi():
+    """Add security schemes and metadata to OpenAPI spec."""
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
