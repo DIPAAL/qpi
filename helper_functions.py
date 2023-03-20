@@ -1,10 +1,11 @@
-"""Helper functions for the ETL process."""
+"""Helper functions for Query Processing."""
 import configparser
 import os
 from datetime import datetime, timedelta
 from typing import Tuple, Callable, TypeVar
 from time import perf_counter
 import psycopg2
+from constants import ROOT_DIR
 
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
@@ -58,15 +59,27 @@ config = None  # Global configuration variable
 def get_config():
     """Get the application configuration."""
     global config
+
     if config is None:
-        path = './config.properties'
-        local_path = './config-local.properties'
-        if os.path.isfile(local_path):
-            path = local_path
+        path = os.path.join(ROOT_DIR, 'config.properties')
+        local_path = os.path.join(ROOT_DIR, 'config-local.properties')
         config = configparser.ConfigParser()
-        config.read(path)
+
+        if os.path.isfile(local_path):
+            config.read(local_path)
+        elif os.path.isfile(path):
+            config.read(path)
+        else:
+            raise FileNotFoundError('Configuration file not found')
 
     return config
+
+
+def readfile(path_from_root):
+    """Read a file from the root directory."""
+    path = os.path.join(ROOT_DIR, f'{path_from_root}')
+    with open(path, "r") as f:
+        return f.read()
 
 
 def get_connection():

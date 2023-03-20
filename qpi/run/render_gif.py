@@ -12,7 +12,7 @@ from rasterio.plot import show
 import matplotlib.pyplot as plt
 from PIL import Image
 
-from qpi.helper_functions import get_connection
+from helper_functions import get_connection
 
 plot_name = "Class B"
 
