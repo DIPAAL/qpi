@@ -93,3 +93,9 @@ deploy-api:
     - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
     - envsubst < kubernetes/api.yml | kubectl apply -f -
   when: manual
+
+dev:
+  rules:
+    - { if: $GITLAB_CI == 'false' }
+  script:
+    - uvicorn app.api_main:app --reload
