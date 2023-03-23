@@ -1,7 +1,6 @@
-"""FastAPI router for health check query."""
+"""Router for all endpoints related to heatmaps."""
 import datetime
 import os
-from enum import Enum
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import PlainTextResponse
@@ -13,6 +12,7 @@ from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
 from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
 from app.routers.v1.heatmap.models.mobile_type import MobileType
 from app.routers.v1.heatmap.models.ship_type import ShipType
+from app.routers.v1.heatmap.models.single_output_formats import SingleOutputFormat
 from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
 from app.routers.v1.heatmap.models.temporal_resolution import TemporalResolution
 
@@ -69,19 +69,12 @@ def metadata(dw_cursor=Depends(get_dw_cursor)):
     return heatmap_types
 
 
-class SingleOutputFormats(str, Enum):
-    """Output format for rasters enum."""
-
-    png = "png"
-    tiff = "tiff"
-
-
 @router.get("/single/{heatmap_type}/{spatial_resolution}", response_class=PlainTextResponse)
 def single_heatmap(
         spatial_resolution: SpatialResolution,
         mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
         ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
-        format: SingleOutputFormats = Query(default=SingleOutputFormats.tiff),
+        output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff),
         min_x: int = Query(default=3600000),
         min_y: int = Query(default=3030000),
         max_x: int = Query(default=4395000),
@@ -96,7 +89,7 @@ def single_heatmap(
         query = f.read()
 
     if srid != 3034:
-        raise Exception("Only SRID 3034 is supported.")
+        raise HTTPException("Only SRID 3034 is supported.")
 
     spatial_resolution = int(spatial_resolution)
 
@@ -138,7 +131,7 @@ def single_heatmap(
     # print the type of raster.tobytes() to see if it is bytes or str
     print(type(result['raster'].tobytes()))
 
-    if format == SingleOutputFormats.png:
+    if output_format == SingleOutputFormat.png:
         return PlainTextResponse(geo_tiff_to_png(result['raster'].tobytes()).read(), media_type="image/png")
 
     return PlainTextResponse(result['raster'].tobytes(), media_type="image/tiff")
