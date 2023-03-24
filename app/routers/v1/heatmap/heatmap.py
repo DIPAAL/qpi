@@ -85,11 +85,11 @@ def single_heatmap(
         heatmap_type: HeatmapType = HeatmapType.count,
         dw_cursor=Depends(get_dw_cursor)):
     """Return a single heatmap."""
-    with open(os.path.join(current_file_path, "sql/single_heatmap.sql"), "r") as f:
-        query = f.read()
-
     if srid != 3034:
         raise HTTPException("Only SRID 3034 is supported.")
+
+    with open(os.path.join(current_file_path, "sql/single_heatmap.sql"), "r") as f:
+        query = f.read()
 
     spatial_resolution = int(spatial_resolution)
 
@@ -107,8 +107,8 @@ def single_heatmap(
     end_date_id = int(end.strftime("%Y%m%d"))
 
     dw_cursor.execute(query, {
-        'size_x': width,
-        'size_y': height,
+        'width': width,
+        'height': height,
         'min_x': min_x,
         'min_y': min_y,
         'max_x': max_x,

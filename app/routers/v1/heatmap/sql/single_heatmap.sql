@@ -1,6 +1,6 @@
 WITH reference (rast, geom) AS (
     SELECT ST_AddBand(
-        ST_MakeEmptyRaster (%(size_x)s, %(size_y)s, %(min_x)s, %(min_y)s, %(spatial_resolution)s, %(spatial_resolution)s, 0, 0, 3034),
+        ST_MakeEmptyRaster (%(width)s, %(height)s, %(min_x)s, %(min_y)s, %(spatial_resolution)s, %(spatial_resolution)s, 0, 0, 3034),
         '32BUI'::text,
         1,
         0
