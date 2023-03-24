@@ -31,8 +31,8 @@ def count_rows(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     Returns:
         The number of rows in the table
     """
-    dw_cursor.execute(f"SELECT COUNT(*) FROM {table}")
-    return dw_cursor.fetchall()
+    dw_cursor.execute(f"SELECT COUNT(*) FROM {table.name}")
+    return {"count": dw_cursor.fetchone()[0]}
 
 
 @router.get("/{table}/columns")
@@ -47,5 +47,5 @@ def column_names(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
     Returns:
         A list of column names
     """
-    dw_cursor.execute(f"SELECT * FROM {table} LIMIT 0")
+    dw_cursor.execute(f"SELECT * FROM {table.name} LIMIT 0")
     return [desc[0] for desc in dw_cursor.description]
