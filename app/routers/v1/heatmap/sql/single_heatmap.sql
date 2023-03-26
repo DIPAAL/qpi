@@ -9,12 +9,12 @@ WITH reference (rast, geom) AS (
 )
  SELECT
     ST_AsGDALRaster(
-        ST_MapAlgebra(ST_Union(q1.rast), reference.rast, '[rast1.val]+[rast2.val]', extenttype:='UNION'),
+        ST_MapAlgebra(ST_Union(q1.rast, 'SUM'), reference.rast, '[rast1.val]+[rast2.val]', extenttype:='UNION'),
         'GTiff'
     ) AS raster
 FROM reference, (
     SELECT
-        ST_Union(fch.rast) AS rast
+        ST_Union(fch.rast, 'SUM') AS rast
     FROM reference, fact_cell_heatmap fch
     JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
     JOIN dim_cell_5000m dc on fch.cell_x = dc.x AND fch.cell_y = dc.y AND fch.partition_id = dc.partition_id
