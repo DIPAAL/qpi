@@ -23,3 +23,9 @@ def root():
 def health():
     """Heartbeat endpoint. Returns status message 'ok'."""
     return {"status": "ok"}
+
+@app.get("/test")
+async def test(
+        input_value: str | None = None,
+):
+    return input_value

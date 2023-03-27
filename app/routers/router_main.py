@@ -4,7 +4,8 @@ API router.
 Collects all routers from submodules into a single router for easier import in api_main.
 """
 from fastapi import APIRouter
-from app.routers.v1 import basic_sql, raster, ship
+from app.routers.v1 import basic_sql, raster
+import app.routers.v1.ship.router as ship
 
 # Routers for different versions of the API can be added here
 # Remember to add the proper prefix and tags to the router
