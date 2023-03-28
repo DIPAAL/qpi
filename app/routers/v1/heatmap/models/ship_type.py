@@ -1,0 +1,33 @@
+"""Define the allowed ship types."""
+from enum import Enum
+
+
+class ShipType(str, Enum):
+    """The available filters for ship type."""
+
+    wig = "WIG"
+    pilot = "Pilot"
+    anti_pollution = "Anti-pollution"
+    medical = "Medical"
+    towing = "Towing"
+    spare_1 = "Spare 1"
+    reserved = "Reserved"
+    dredging = "Dredging"
+    cargo = "Cargo"
+    tug = "Tug"
+    port_tender = "Port tender"
+    other = "Other"
+    passenger = "Passenger"
+    spare_2 = "Spare 2"
+    sailing = "Sailing"
+    unknown = "Unknown"
+    tanker = "Tanker"
+    not_party_to_conflict = "Not party to conflict"
+    diving = "Diving"
+    fishing = "Fishing"
+    towing_long_wide = "Towing long/wide"
+    law_enforcement = "Law enforcement"
+    pleasure = "Pleasure"
+    military = "Military"
+    sar = "SAR"
+    hsc = "HSC"
