@@ -1,3 +1,4 @@
+"""Pydantic models/schemas, defining valid data shapes for ship API endpoints."""
 from pydantic import BaseModel
 
 

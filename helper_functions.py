@@ -6,8 +6,6 @@ from typing import Tuple, Callable, TypeVar
 from time import perf_counter
 import psycopg2
 from constants import ROOT_DIR
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
@@ -107,12 +105,3 @@ def get_connection():
         password=password,
         port=port
     )
-
-def create_session_to_dw():
-    config = get_config()
-    database = config['Database']['database']
-    user = config['Database']['user']
-    password = config['Database']['password']
-    dw_url = f"postgresql://{user}:{password}@postgresserver/{database}"
-    engine = create_engine(dw_url)
-    return sessionmaker(autocommit=False, autoflush=False, bind=engine)

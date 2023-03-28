@@ -1,6 +1,6 @@
 """Constants used within the API module."""
 from enum import Enum
-
+from sqlalchemy.ext.declarative import declarative_base
 
 class DWTABLE(str, Enum):
     """Enum for all data warehouse tables."""

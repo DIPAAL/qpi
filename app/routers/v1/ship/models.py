@@ -1,14 +1,14 @@
+"""Database models for ship."""
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-
-Base = declarative_base()
+from app.datawarehouse import Base
 
 class DimShip(Base):
-    __tablename__ = 'dim_ship'
+    """Ship dimension table."""
+    __tablename__ = "dim_ship"
 
-    ship_id = Column(Integer, primary_key=True)
-    ship_type_id = Column(Integer, ForeignKey('dim_ship_type.ship_type_id'))
+    ship_id = Column(Integer, primary_key=True, index=True)
+    ship_type_id = Column(Integer, ForeignKey("dim_ship_type.ship_type_id"))
     imo = Column(Integer)
     mmsi = Column(Integer)
     name = Column(String)
@@ -22,9 +22,10 @@ class DimShip(Base):
     dim_ship_type = relationship("DimShipType", back_populates="dim_ship")
 
 class DimShipType(Base):
-    __tablename__ = 'dim_ship_type'
+    """Ship type dimension table"""
+    __tablename__ = "dim_ship_type"
 
-    ship_type_id = Column(Integer, primary_key=True)
+    ship_type_id = Column(Integer, primary_key=True, index=True)
     mobile_type = Column(String)
     ship_type = Column(String)
 
