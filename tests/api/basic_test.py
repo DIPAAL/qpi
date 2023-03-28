@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
 from app.api_main import app
-from app.dependencies import get_dw_cursor
+from app.dependencies import get_db
 
 
 def test_heartbeat_pass():
@@ -12,7 +12,7 @@ def test_heartbeat_pass():
     def override_get_dw_cursor():
         return cursor_mock
 
-    app.dependency_overrides[get_dw_cursor] = override_get_dw_cursor
+    app.dependency_overrides[get_db()] = override_get_dw_cursor
 
     with TestClient(app) as client:
         response = client.get("/api/v1/health")
