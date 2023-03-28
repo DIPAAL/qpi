@@ -10,8 +10,6 @@ from fastapi.responses import RedirectResponse
 
 app = FastAPI()
 
-
-
 # Include main router, which includes all other routers
 app.include_router(router_main.router_main)
 

@@ -13,4 +13,5 @@ httpx==0.23.3
 uvicorn==0.21.1
 pydash==6.0.2
 sqlalchemy==2.0.7
+pandas==1.5.3
 

@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.get("")
-def health(response: Response, db: Session=Depends(get_db)):
+def health(response: Response, db: Session = Depends(get_db)):
     """Check the health of the API, for now just checks if database is reachable."""
     status = db.execute(text("SELECT 1")).fetchone()[0] == 1
     response.status_code = 200 if status else 500

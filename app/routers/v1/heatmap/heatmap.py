@@ -4,8 +4,11 @@ import os
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import PlainTextResponse
+from sqlalchemy import text
+import pandas as pd
+from sqlalchemy.orm import Session
 
-from app.dependencies import get_dw_cursor
+from app.dependencies import get_db
 from pydash.objects import merge
 
 from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
@@ -26,18 +29,16 @@ temporal_resolution_names = {
 
 
 @router.get("")
-def metadata(dw_cursor=Depends(get_dw_cursor)):
+def metadata(db: Session = Depends(get_db)):
     """Return the available heatmaps."""
     with open(os.path.join(current_file_path, "sql/available_heatmaps.sql"), "r") as f:
         query = f.read()
 
-    dw_cursor.execute(query)
-
-    result = dw_cursor.fetchall()
+    df = pd.read_sql(text(query), db.bind.connect())
 
     heatmap_types = {}
 
-    for row in result:
+    for row in df.to_dict(orient="records"):
         row_object = {
             row['slug']: {
                 "name": row['name'],
@@ -83,10 +84,10 @@ def single_heatmap(
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
         end: datetime.datetime = Query(default="2022-02-01T00:00:00Z"),
         heatmap_type: HeatmapType = HeatmapType.count,
-        dw_cursor=Depends(get_dw_cursor)):
+        db=Depends(get_db)):
     """Return a single heatmap."""
     if srid != 3034:
-        raise HTTPException("Only SRID 3034 is supported.")
+        raise HTTPException(501, "Only SRID 3034 is supported.")
 
     with open(os.path.join(current_file_path, "sql/single_heatmap.sql"), "r") as f:
         query = f.read()
@@ -103,10 +104,15 @@ def single_heatmap(
     width = int((max_x - min_x) / int(spatial_resolution))
     height = int((max_y - min_y) / int(spatial_resolution))
 
+    # if more than 2 megapixels, ask the user to adjust resolution or bounds
+    if width * height > 2000000:
+        raise HTTPException(400, "The requested raster contains more than 2 megapixels."
+                                 " Please adjust the resolution or bounds.")
+
     start_date_id = int(start.strftime("%Y%m%d"))
     end_date_id = int(end.strftime("%Y%m%d"))
 
-    dw_cursor.execute(query, {
+    params = {
         'width': width,
         'height': height,
         'min_x': min_x,
@@ -121,20 +127,17 @@ def single_heatmap(
         'end_date_id': end_date_id,
         'start_timestamp': start,
         'end_timestamp': end,
-    })
+    }
 
-    result = dw_cursor.fetchone()
+    result = db.execute(text(query), params).fetchone()
 
     if result is None:
-        raise HTTPException(status_code=404, detail="No heatmap data found given the parameters")
-
-    # print the type of raster.tobytes() to see if it is bytes or str
-    print(type(result['raster'].tobytes()))
+        raise HTTPException(404, "No heatmap data found given the parameters")
 
     if output_format == SingleOutputFormat.png:
-        return PlainTextResponse(geo_tiff_to_png(result['raster'].tobytes()).read(), media_type="image/png")
+        return PlainTextResponse(geo_tiff_to_png(result[0].tobytes()).read(), media_type="image/png")
 
-    return PlainTextResponse(result['raster'].tobytes(), media_type="image/tiff")
+    return PlainTextResponse(result[0].tobytes(), media_type="image/tiff")
 
 
 @router.post("mapalgebra/{type}/{spatial_resolution}/{temporal_resolution}")
