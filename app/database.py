@@ -12,7 +12,7 @@ SQLALCHEMY_DATABASE_URL = \
     f"postgresql://{config['Database']['user']}@{config['Database']['host']}/{config['Database']['database']}"
 
 if os.getenv("IS_TESTING", False):
-    SQLALCHEMY_DATABASE_URL = f"sqlite:///{config['Database']['database']}"
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{config['Database']['database']}.sqlite"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={}
