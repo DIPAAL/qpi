@@ -18,6 +18,9 @@ class DimShip(Base):
     c = Column(Float)
     d = Column(Float)
     location_system_type = Column(String)
+    mid = Column(Integer)
+    flag_region = Column(String)
+    flag_state = Column(String)
 
     dim_ship_type = relationship("DimShipType", back_populates="dim_ship")
 

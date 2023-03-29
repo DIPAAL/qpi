@@ -1,5 +1,5 @@
 """
-Ship router
+Ship router.
 
 Contains endpoints to retrieve information about a specific ship or a set of ships.
 """
@@ -9,37 +9,40 @@ from app.dependencies import get_dw
 from sqlalchemy.orm import Session
 from app.routers.v1.ship import models, schemas, crud
 from app.datawarehouse import engine
-from helper_functions import query_apply_filters
 
 models.Base.metadata.create_all(bind=engine)
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[schemas.DimShip])
+@router.get("/", response_model=list[schemas.DimShipDetail])
 async def ships(
         skip: int = 0,
         limit: int = 100,
         ship_id: int | None = None,
         mmsi: list[int] | None = Query(default=None),
+        mmsi_gt: int | None = Query(default=None),
+        mmsi_gte: int | None = Query(default=None),
+        mmsi_lte: int | None = Query(default=None),
+        mmsi_lt: int | None = Query(default=None),
         mid: list[int] | None = Query(default=None),
-	    imo: list[int] | None = Query(default=None),
-	    a: list[int] | None = Query(default=None),
-	    b: list[int] | None = Query(default=None),
-	    c: list[int] | None = Query(default=None),
-	    d: list[int] | None = Query(default=None),
-	    name: list[str] | None = Query(default=None),
-	    callsign: list[str] | None = Query(default=None),
-	    location_system_type: list[str] | None = Query(default=None),
-	    flag_region: list[str] | None = Query(default=None),
-	    flag_state: list[str] | None = Query(default=None),
-	    mobile_type: list[str] | None = Query(default=None),
-	    ship_type: list[str] | None = Query(default=None),
+        imo: list[int] | None = Query(default=None),
+        a: list[int] | None = Query(default=None),
+        b: list[int] | None = Query(default=None),
+        c: list[int] | None = Query(default=None),
+        d: list[int] | None = Query(default=None),
+        name: list[str] | None = Query(default=None),
+        callsign: list[str] | None = Query(default=None),
+        location_system_type: list[str] | None = Query(default=None),
+        flag_region: list[str] | None = Query(default=None),
+        flag_state: list[str] | None = Query(default=None),
+        mobile_type: list[str] | None = Query(default=None),
+        ship_type: list[str] | None = Query(default=None),
         dw: Session = Depends(get_dw)
 ):
     # construct query based on parameters
     params = locals().copy()
-    query = dw.query(models.DimShip)
+    query = dw.query(models.DimShip).join(models.DimShipType)
 
     if ship_id is not None:
         query = query.filter(models.DimShip.ship_id == ship_id)
@@ -52,7 +55,16 @@ async def ships(
 
         for attr in params:
             if params[attr] is not None:
-                query = query.filter(getattr(models.DimShip, attr).in_(params[attr]))
+                if "_gt" in attr:
+                    query = query.filter(getattr(models.DimShip, attr[:-3]) > params[attr])
+                elif "_gte" in attr:
+                    query = query.filter(getattr(models.DimShip, attr[:-4]) >= params[attr])
+                elif "_lt" in attr:
+                    query = query.filter(getattr(models.DimShip, attr[:-3]) < params[attr])
+                elif "_lte" in attr:
+                    query = query.filter(getattr(models.DimShip, attr[:-4]) <= params[attr])
+                else:
+                    query = query.filter(getattr(models.DimShip, attr).in_(params[attr]))
 
     return query.offset(skip).limit(limit).all()
 

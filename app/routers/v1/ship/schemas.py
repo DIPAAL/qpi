@@ -3,15 +3,18 @@ from pydantic import BaseModel
 
 
 class DimShipBase(BaseModel):
-    ship_type_id: int
-    imo: int
     name: str
     callsign: str
+    location_system_type: str
+    flag_region: str
+    flag_state: str
     a: float
     b: float
     c: float
     d: float
-    location_system_type: str
+    ship_type_id: int
+    imo: int
+    mid: int
 
 
 class DimShip(DimShipBase):
@@ -34,3 +37,12 @@ class DimShipType(DimShipTypeBase):
     class Config:
         orm_mode = True
     pass
+
+class DimShipDetail(DimShip):
+    dim_ship_type: DimShipType
+
+    class Config:
+        orm_mode = True
+    pass
+
+

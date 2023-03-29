@@ -1,6 +1,6 @@
 """Constants used within the API module."""
 from enum import Enum
-from sqlalchemy.ext.declarative import declarative_base
+
 
 class DWTABLE(str, Enum):
     """Enum for all data warehouse tables."""
@@ -31,19 +31,3 @@ class MISCTABLE(str, Enum):
 
     audit_log = "audit_log"
     benchmark_result = "benchmark_result"
-
-# All column names in the dim_ship and dim_ship_type attributes
-class DIMSHIP(str, Enum):
-    a = "a"
-    b = "b"
-    c = "c"
-    d = "d"
-    ship_id = "ship_id"
-    ship_type_id = "ship_type_id"
-    imo = "imo"
-    mmsi = "mmsi"
-    name = "name"
-    callsign = "callsign"
-    location_system_type = "location_system_type"
-    mobile_type = "mobile_type"
-    ship_type = "ship_type"
