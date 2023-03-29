@@ -12,6 +12,7 @@ from app.dependencies import get_dw
 from pydash.objects import merge
 
 from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
+from app.routers.v1.heatmap.models.enc_enum import EncCell
 from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
 from app.routers.v1.heatmap.models.mobile_type import MobileType
 from app.routers.v1.heatmap.models.ship_type import ShipType
@@ -82,6 +83,7 @@ def single_heatmap(
         max_x: int = Query(default=4395000),
         max_y: int = Query(default=3485000),
         srid: int = Query(default=3034),
+        enc_cell: EncCell = Query(default=None),
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
         end: datetime.datetime = Query(default="2022-02-01T00:00:00Z"),
         heatmap_type: HeatmapType = HeatmapType.count,
@@ -94,6 +96,24 @@ def single_heatmap(
         query = f.read()
 
     spatial_resolution = int(spatial_resolution)
+
+    if enc_cell is not None:
+        # replace min_x, min_y, max_x, max_y with the values from the enc_cell
+        enc_cell_result = db.execute(text("""
+            SELECT 
+                ST_XMin(geom) AS min_x,
+                ST_YMin(geom) AS min_y, 
+                ST_XMax(geom) AS max_x, 
+                ST_YMax(geom) AS max_y 
+            FROM reference_geometries WHERE name = :name AND type = 'enc';
+        """), { "name": enc_cell.value }).fetchone()
+
+        min_x = enc_cell_result.min_x
+        min_y = enc_cell_result.min_y
+        max_x = enc_cell_result.max_x
+        max_y = enc_cell_result.max_y
+
+    print(min_x, min_y, max_x, max_y)
 
     # extend spatial bounds to fit the spatial resolution
     min_x = min_x - (min_x % spatial_resolution)
