@@ -1,11 +1,11 @@
 """FastAPI dependencies for dependency injection into routers or the main app."""
-import psycopg2.extras
-
-from helper_functions import get_connection
+from app.database import SessionLocal
 
 
-def get_dw_cursor():
-    """Return a cursor to the data warehouse database."""
-    conn = get_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    return cursor
+def get_dw():
+    """Use the globally scoped sessionmaker to create a db session scoped to the request."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

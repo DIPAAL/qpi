@@ -1,7 +1,10 @@
 """FastAPI router for basic SQL queries."""
 
 from fastapi import APIRouter, Depends
-from app.dependencies import get_dw_cursor
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.dependencies import get_dw
 from app.api_constants import DWTABLE
 
 
@@ -20,32 +23,34 @@ def table():
 
 
 @router.get("/{table}/count")
-def count_rows(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
+def count_rows(table: DWTABLE, db: Session = Depends(get_dw)):
     """
     Count the number of rows in a table.
 
     Args:
-        dw_cursor: A cursor to the data warehouse database
+        db: A DB session
         table: A table in the database
 
     Returns:
         The number of rows in the table
     """
-    dw_cursor.execute(f"SELECT COUNT(*) FROM {table.name}")
-    return {"count": dw_cursor.fetchone()[0]}
+    return {
+        "count": db.execute(text(f"SELECT COUNT(*) FROM {table.name}")).fetchall()[0][0]
+    }
 
 
 @router.get("/{table}/columns")
-def column_names(table: DWTABLE, dw_cursor=Depends(get_dw_cursor)):
+def column_names(table: DWTABLE, db=Depends(get_dw)):
     """
     Get the column names of a table.
 
     Args:
-        dw_cursor: A cursor to the data warehouse database
+        db: A DB session.
         table: A table in the database
 
     Returns:
         A list of column names
     """
-    dw_cursor.execute(f"SELECT * FROM {table.name} LIMIT 0")
-    return [desc[0] for desc in dw_cursor.description]
+    return {
+        "columns": [column for column in db.execute(text(f"SELECT * FROM {table.name} LIMIT 0")).keys()]
+    }

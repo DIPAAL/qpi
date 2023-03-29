@@ -5,8 +5,8 @@ Note: Does not get called as main when called with uvicorn.
 """
 from fastapi import FastAPI
 from app.routers import router_main
-from starlette.responses import RedirectResponse
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import RedirectResponse
 
 app = FastAPI()
 
