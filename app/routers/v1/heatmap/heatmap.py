@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
 import pandas as pd
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_dw
@@ -119,6 +120,10 @@ def single_heatmap(
         'min_y': min_y,
         'max_x': max_x,
         'max_y': max_y,
+        'min_cell_x': int(min_x / spatial_resolution),
+        'min_cell_y': int(min_y / spatial_resolution),
+        'max_cell_x': int(max_x / spatial_resolution),
+        'max_cell_y': int(max_y / spatial_resolution),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'mobile_types': mobile_types,
@@ -128,7 +133,6 @@ def single_heatmap(
         'start_timestamp': start,
         'end_timestamp': end,
     }
-
     result = db.execute(text(query), params).fetchone()
 
     if result is None:
