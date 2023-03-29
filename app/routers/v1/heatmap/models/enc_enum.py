@@ -1,7 +1,10 @@
+"""Enums for the available ENC cells."""
 from enum import Enum
 
 
 class EncCell(str, Enum):
+    """Enum of available ENC cells."""
+
     oeer_havn = "Øer Havn"
     koebenhavns_havn_sydlige_del = "Københavns Havn (Sydlige del)"
     indsejlingen_til_esbjerg = "Indsejlingen til Esbjerg"
