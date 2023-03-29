@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
 import pandas as pd
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_dw
@@ -19,6 +18,7 @@ from app.routers.v1.heatmap.models.ship_type import ShipType
 from app.routers.v1.heatmap.models.single_output_formats import SingleOutputFormat
 from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
 from app.routers.v1.heatmap.models.temporal_resolution import TemporalResolution
+from helper_functions import measure_time
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -133,15 +133,22 @@ def single_heatmap(
         'start_timestamp': start,
         'end_timestamp': end,
     }
-    result = db.execute(text(query), params).fetchone()
+    (result, query_time_taken_sec) = measure_time(lambda: db.execute(text(query), params).fetchone())
 
     if result is None:
         raise HTTPException(404, "No heatmap data found given the parameters")
 
     if output_format == SingleOutputFormat.png:
-        return PlainTextResponse(geo_tiff_to_png(result[0].tobytes()).read(), media_type="image/png")
+        (png, image_time_taken_sec) = measure_time(lambda: geo_tiff_to_png(result[0].tobytes()).read())
+        return PlainTextResponse(png, media_type="image/png",
+                                 headers={
+                                     'Query-Time': str(query_time_taken_sec),
+                                     'Image-Time': str(image_time_taken_sec)
+                                 })
 
-    return PlainTextResponse(result[0].tobytes(), media_type="image/tiff")
+    return PlainTextResponse(result[0].tobytes(), media_type="image/tiff",
+                             headers={'Query-Time': str(query_time_taken_sec)}
+                             )
 
 
 @router.post("mapalgebra/{type}/{spatial_resolution}/{temporal_resolution}")
