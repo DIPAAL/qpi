@@ -8,7 +8,7 @@ from sqlalchemy import text
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_dw
 from pydash.objects import merge
 
 from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
@@ -29,7 +29,7 @@ temporal_resolution_names = {
 
 
 @router.get("")
-def metadata(db: Session = Depends(get_db)):
+def metadata(db: Session = Depends(get_dw)):
     """Return the available heatmaps."""
     with open(os.path.join(current_file_path, "sql/available_heatmaps.sql"), "r") as f:
         query = f.read()
@@ -84,7 +84,7 @@ def single_heatmap(
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
         end: datetime.datetime = Query(default="2022-02-01T00:00:00Z"),
         heatmap_type: HeatmapType = HeatmapType.count,
-        db=Depends(get_db)):
+        db=Depends(get_dw)):
     """Return a single heatmap."""
     if srid != 3034:
         raise HTTPException(501, "Only SRID 3034 is supported.")

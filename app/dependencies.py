@@ -2,7 +2,7 @@
 from app.database import SessionLocal
 
 
-def get_db():
+def get_dw():
     """Use the globally scoped sessionmaker to create a db session scoped to the request."""
     db = SessionLocal()
     try:

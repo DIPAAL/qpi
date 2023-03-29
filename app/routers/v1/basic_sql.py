@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_dw
 from app.api_constants import DWTABLE
 
 
@@ -23,7 +23,7 @@ def table():
 
 
 @router.get("/{table}/count")
-def count_rows(table: DWTABLE, db: Session = Depends(get_db)):
+def count_rows(table: DWTABLE, db: Session = Depends(get_dw)):
     """
     Count the number of rows in a table.
 
@@ -40,7 +40,7 @@ def count_rows(table: DWTABLE, db: Session = Depends(get_db)):
 
 
 @router.get("/{table}/columns")
-def column_names(table: DWTABLE, db=Depends(get_db)):
+def column_names(table: DWTABLE, db=Depends(get_dw)):
     """
     Get the column names of a table.
 
