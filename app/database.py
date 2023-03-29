@@ -9,7 +9,8 @@ from helper_functions import get_config
 config = get_config()
 
 SQLALCHEMY_DATABASE_URL = \
-    f"postgresql://{config['Database']['user']}@{config['Database']['host']}/{config['Database']['database']}"
+    f"postgresql://{config['Database']['user']}:{config['Database']['password']}" \
+    f"@{config['Database']['host']}/{config['Database']['database']}"
 
 if os.getenv("IS_TESTING", False):
     SQLALCHEMY_DATABASE_URL = f"sqlite:///{config['Database']['database']}.sqlite"
