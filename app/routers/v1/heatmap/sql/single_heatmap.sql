@@ -16,7 +16,7 @@ FROM reference,
      (
          SELECT ST_Union(q1.rast) AS rast
          FROM (
-                  SELECT ST_Union(fch.rast) AS rast
+                  SELECT ST_Union(fch.rast, 'SUM') AS rast
                   FROM fact_cell_heatmap fch
                            JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
                   WHERE fch.spatial_resolution = :spatial_resolution
