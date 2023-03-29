@@ -13,3 +13,4 @@ def get_ships(dw: Session, skip: int = 0, limit: int = 100):
 
 def get_ship_types(dw: Session, skip: int = 0, limit: int = 100):
     return dw.query(models.DimShipType).offset(skip).limit(limit).all()
+

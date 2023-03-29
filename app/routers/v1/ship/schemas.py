@@ -6,7 +6,7 @@ class DimShipBase(BaseModel):
     ship_type_id: int
     imo: int
     name: str
-    call_sign: str
+    callsign: str
     a: float
     b: float
     c: float

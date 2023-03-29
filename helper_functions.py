@@ -105,3 +105,17 @@ def get_connection():
         password=password,
         port=port
     )
+
+
+def query_apply_filters(query, filters):
+    """
+    Apply filters to a query.
+
+    Keyword arguments:
+        query: the query to apply the filters to
+        filters: the filters to apply
+    """
+    for filter in filters:
+        query = query.filter(filter)
+
+    return query

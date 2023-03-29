@@ -12,7 +12,7 @@ class DimShip(Base):
     imo = Column(Integer)
     mmsi = Column(Integer)
     name = Column(String)
-    call_sign = Column(String)
+    callsign = Column(String)
     a = Column(Float)
     b = Column(Float)
     c = Column(Float)
