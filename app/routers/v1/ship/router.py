@@ -91,13 +91,13 @@ async def ships(
         b_(filter) (list[int], int, optional): Distance from the transponder to the stern of the ship. Can be filtered with the following operators: in, nin, gt, gte, lte, lt.
         c_(filter) (list[int], int, optional): Distance from the transponder to the port side of the ship. Can be filtered with the following operators: in, nin, gt, gte, lte, lt.
         d_(filter) (list[int], int, optional): Distance from the transponder to the starboard side of the ship. Can be filtered with the following operators: in, nin, gt, gte, lte, lt.
-        name_(filter) (list[str], str, optional): Name of the ship. Can be filtered with the following operators: in, nin.
-        callsign_(filter) (list[str], str, optional): Callsign of the ship. Can be filtered with the following operators: in, nin.
-        location_system_type_(filter) (list[str], str, optional): Location system type of the ship. Can be filtered with the following operators: in, nin.
-        flag_region_(filter) (list[str], str, optional): Flag region of the ship. Can be filtered with the following operators: in, nin.
-        flag_state_(filter) (list[str], str, optional): Flag state of the ship. Can be filtered with the following operators: in, nin.
-        mobile_type_(filter) (list[str], str, optional): Mobile type of the ship. Can be filtered with the following operators: in, nin.
-        ship_type_(filter) (list[str], str, optional): Ship type of the ship. Can be filtered with the following operators: in, nin.
+        name_(filter) (list[str], optional): Name of the ship. Can be filtered with the following operators: in, nin.
+        callsign_(filter) (list[str], optional): Callsign of the ship. Can be filtered with the following operators: in, nin.
+        location_system_type_(filter) (list[str], optional): Location system type of the ship. Can be filtered with the following operators: in, nin.
+        flag_region_(filter) (list[str], optional): Flag region of the ship. Can be filtered with the following operators: in, nin.
+        flag_state_(filter) (list[str], optional): Flag state of the ship. Can be filtered with the following operators: in, nin.
+        mobile_type_(filter) (list[str], optional): Mobile type of the ship. Can be filtered with the following operators: in, nin.
+        ship_type_(filter) (list[str], optional): Ship type of the ship. Can be filtered with the following operators: in, nin.
     Returns:
 
         dict: Dictionary with information about a specific ship or a set of ships.

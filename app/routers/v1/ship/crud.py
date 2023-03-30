@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.routers.v1.ship import models, schemas
+from app.routers.v1.ship import models
 
 
 def get_ship(dw: Session, ship_id: int):
