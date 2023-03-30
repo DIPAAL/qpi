@@ -159,7 +159,8 @@ def single_heatmap(
 def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
     """Measure time of converting geotiff to png, and reraise the ValueError as HTTPException."""
     try:
-        (png, image_time_taken_sec) = measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
+        (png, image_time_taken_sec) = \
+            measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
     except ValueError:
         raise HTTPException(404, "No heatmap data found given the parameters.")
     return image_time_taken_sec, png
@@ -282,7 +283,6 @@ def mapalgebra_heatmap(
     return PlainTextResponse(result[0].tobytes(), media_type="image/tiff",
                              headers={'Query-Time': str(query_time_taken_sec)}
                              )
-
 
 
 @router.post("/multi/{type}/{spatial_resolution}/{temporal_resolution}")
