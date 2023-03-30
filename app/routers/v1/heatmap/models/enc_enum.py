@@ -127,7 +127,7 @@ class EncCell(str, Enum):
     lillebaelt_als_sund_og_soenderborg_bugt = "Lillebælt. Als Sund og Sønderborg Bugt"
     nordsoeen_ringkoebing_fjord = "Nordsøen. Ringkøbing Fjord"
     farvandet_syd_for_fyn_rudkoebing_loeb = "Farvandet syd for Fyn. Rudkøbing Løb"
-    flintrnnan = "Flintrännan"
+    flintrannan = "Flintrännan"
     kattegat_laesoe_rende = "Kattegat. Læsø Rende"
     limfjorden_aalborg_havn = "Limfjorden. Aalborg Havn"
     arkona_bis_kolberg = "Arkona Bis Kolberg"
