@@ -29,8 +29,12 @@ dipaal_logo.thumbnail((fig_width * 0.3, fig_height * 0.3), Image.LANCZOS)
 dipaal_logo = np.asarray(dipaal_logo)
 
 
-def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO) -> io.BytesIO:
+def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False) -> io.BytesIO:
     """Convert a GeoTIFF to a PNG."""
+    norm = colors.LogNorm(clip=True)
+    if can_be_negative:
+        norm = colors.SymLogNorm(1)
+
     with MemoryFile(geo_tiff_bytes) as memfile:
         with memfile.open() as raster:
             fig, ax = plt.subplots(figsize=fig_size)
@@ -43,7 +47,7 @@ def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO) -> io.BytesIO:
             plot = show(
                 raster,
                 ax=ax, cmap='turbo',
-                norm=colors.LogNorm(clip=True),
+                norm=norm,
                 interpolation='none',
             )
 

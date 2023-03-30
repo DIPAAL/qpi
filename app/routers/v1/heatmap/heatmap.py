@@ -156,10 +156,10 @@ def single_heatmap(
                              )
 
 
-def try_get_png_from_geotiff(geo_tiff_bytes):
+def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
     """Measure time of converting geotiff to png, and reraise the ValueError as HTTPException."""
     try:
-        (png, image_time_taken_sec) = measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes).read())
+        (png, image_time_taken_sec) = measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
     except ValueError:
         raise HTTPException(404, "No heatmap data found given the parameters.")
     return image_time_taken_sec, png
@@ -181,19 +181,111 @@ def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, ma
     return enc_cell_result.min_x, enc_cell_result.min_y, enc_cell_result.max_x, enc_cell_result.max_y
 
 
-@router.post("mapalgebra/{type}/{spatial_resolution}/{temporal_resolution}")
+@router.get("/mapalgebra/{heatmap_type}/{spatial_resolution}")
 def mapalgebra_heatmap(
-        heatmap_type: HeatmapType,
-        spatial_resolution: SpatialResolution,
-        temporal_resolution: TemporalResolution,
-        # dw_cursor=Depends(get_dw_cursor)
+        heatmap_type: HeatmapType = HeatmapType.count,
+        spatial_resolution: SpatialResolution = SpatialResolution.five_kilometers,
+        output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff),
+        map_algebra_expr: str = Query(default="[rast1.val]-[rast2.val]"),
+        map_algebra_no_data_1_expr: str = Query(default="[rast2.val]"),
+        map_algebra_no_data_2_expr: str = Query(default="-[rast1.val]"),
+        min_x: int = Query(default=3600000),
+        min_y: int = Query(default=3030000),
+        max_x: int = Query(default=4395000),
+        max_y: int = Query(default=3485000),
+        srid: int = Query(default=3034),
+        enc_cell: EncCell = Query(default=None),
+        first_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
+        first_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
+        first_start: datetime.datetime = Query(default="2021-01-01T00:00:00Z"),
+        first_end: datetime.datetime = Query(default="2021-02-01T00:00:00Z"),
+        second_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
+        second_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
+        second_start: datetime.datetime = Query(default="2021-07-01T00:00:00Z"),
+        second_end: datetime.datetime = Query(default="2021-08-01T00:00:00Z"),
+        dw=Depends(get_dw)
 ):
     """Return a single mapalgebra heatmap."""
-    raise NotImplementedError(f"Mapalgebra heatmap for {heatmap_type} is not implemented yet. "
-                              f"(spatial_resolution={spatial_resolution}, temporal_resolution={temporal_resolution})")
+    if srid != 3034:
+        raise HTTPException(501, "Only SRID 3034 is supported.")
+
+    with open(os.path.join(current_file_path, "sql/mapalgebra_single_heatmap.sql"), "r") as f:
+        query = f.read()
+
+    spatial_resolution = int(spatial_resolution)
+
+    min_x, min_y, max_x, max_y = get_enc_cell_min_max(dw, enc_cell, min_x, min_y, max_x, max_y)
+
+    # extend spatial bounds to fit the spatial resolution
+    min_x = int(min_x - (min_x % spatial_resolution))
+    min_y = int(min_y - (min_y % spatial_resolution))
+    max_x = int(max_x + (spatial_resolution - (max_x % spatial_resolution)))
+    max_y = int(max_y + (spatial_resolution - (max_y % spatial_resolution)))
+
+    # get size of the output raster
+    width = int((max_x - min_x) / int(spatial_resolution))
+    height = int((max_y - min_y) / int(spatial_resolution))
+
+    # if more than 2 megapixels, ask the user to adjust resolution or bounds
+    if width * height > 2000000:
+        raise HTTPException(400, "The requested raster contains more than 2 megapixels."
+                                 " Please adjust the resolution or bounds.")
+
+    first_start_date_id = int(first_start.strftime("%Y%m%d"))
+    first_end_date_id = int(first_end.strftime("%Y%m%d"))
+    second_start_date_id = int(second_start.strftime("%Y%m%d"))
+    second_end_date_id = int(second_end.strftime("%Y%m%d"))
+
+    params = {
+        'width': width,
+        'height': height,
+        'min_x': min_x,
+        'min_y': min_y,
+        'max_x': max_x,
+        'max_y': max_y,
+        'min_cell_x': int(min_x / 5000),
+        'min_cell_y': int(min_y / 5000),
+        'max_cell_x': int(max_x / 5000),
+        'max_cell_y': int(max_y / 5000),
+        'spatial_resolution': int(spatial_resolution),
+        'heatmap_type_slug': heatmap_type,
+        'map_algebra_expr': map_algebra_expr,
+        'map_algebra_no_data_1_expr': map_algebra_no_data_1_expr,
+        'map_algebra_no_data_2_expr': map_algebra_no_data_2_expr,
+        'first_mobile_types': first_mobile_types,
+        'first_ship_types': first_ship_types,
+        'first_start_date_id': first_start_date_id,
+        'first_end_date_id': first_end_date_id,
+        'first_start_timestamp': first_start,
+        'first_end_timestamp': first_end,
+        'second_mobile_types': second_mobile_types,
+        'second_ship_types': second_ship_types,
+        'second_start_date_id': second_start_date_id,
+        'second_end_date_id': second_end_date_id,
+        'second_start_timestamp': second_start,
+        'second_end_timestamp': second_end,
+    }
+
+    (result, query_time_taken_sec) = measure_time(lambda: dw.execute(text(query), params).fetchone())
+
+    if result is None or result[0] is None:
+        raise HTTPException(404, "No heatmap data found given the parameters.")
+
+    if output_format == SingleOutputFormat.png:
+        image_time_taken_sec, png = try_get_png_from_geotiff(result[0].tobytes(), True)
+        return PlainTextResponse(png, media_type="image/png",
+                                 headers={
+                                     'Query-Time': str(query_time_taken_sec),
+                                     'Image-Time': str(image_time_taken_sec)
+                                 })
+
+    return PlainTextResponse(result[0].tobytes(), media_type="image/tiff",
+                             headers={'Query-Time': str(query_time_taken_sec)}
+                             )
 
 
-@router.post("multi/{type}/{spatial_resolution}/{temporal_resolution}")
+
+@router.post("/multi/{type}/{spatial_resolution}/{temporal_resolution}")
 def multi_heatmap(
         heatmap_type: HeatmapType,
         spatial_resolution: SpatialResolution,
