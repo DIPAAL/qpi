@@ -8,7 +8,6 @@ WITH reference (rast, geom) AS (
     ST_MakeEnvelope(:min_x, :min_y, :max_x, :max_y, 3034) AS geom
 )
 SELECT
-    -- Create a title from the date by parsing it into a date object and then formatting it. Month of year and day of month should be zero padded.
     (q3.iso_year::text   || ' Week ' || lpad(q3.week_of_year::text, 2, '0'))  AS title,
     CASE WHEN q3.rast IS NULL THEN NULL ELSE
         ST_AsGDALRaster(q3.rast,'GTiff')

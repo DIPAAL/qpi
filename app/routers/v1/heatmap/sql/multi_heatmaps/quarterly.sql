@@ -8,7 +8,6 @@ WITH reference (rast, geom) AS (
     ST_MakeEnvelope(:min_x, :min_y, :max_x, :max_y, 3034) AS geom
 )
 SELECT
-    -- Create a title from the date by parsing it into a date object and then formatting it.
     -- I.e 2018-01-01 becomes 2018 Q1
     (q3.year::text || ' Q' || q3.quarter_of_year::text) AS title,
     CASE WHEN q3.rast IS NULL THEN NULL ELSE
