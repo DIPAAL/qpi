@@ -1,7 +1,6 @@
 """Utility functions for rendering heatmaps."""
 import io
 import multiprocessing
-from enum import Enum
 from typing import List, Tuple
 
 import numpy as np
@@ -34,18 +33,24 @@ daisy_logo = np.asarray(daisy_logo)
 dipaal_logo.thumbnail((fig_width * 0.3, fig_height * 0.3), Image.LANCZOS)
 dipaal_logo = np.asarray(dipaal_logo)
 
-class VideoFormats(str, Enum):
-    """Output format for videos enum."""
 
-    mp4 = "mp4"
-    gif = "gif"
+def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title, max_value):
+    """Wrap around creating PNG and loading into ImageIO. Used to multiprocess the creation of PNGs."""
+    return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max=max_value))
 
-def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title, max):
-    return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max=max))
 
 def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, max_value: float = None):
+    """
+    Create a video from a list of GeoTIFFs.
+
+    Keyword arguments:
+        rasters: list of tuples of (title, GeoTIFF bytes)
+        fps: frames per second
+        format: output format
+        max_value: max value for the heatmap
+    """
     with multiprocessing.Pool() as pool:
-           frames = pool.starmap(geo_tiff_to_imageio, [(raster, title, max_value) for title, raster in rasters])
+        frames = pool.starmap(geo_tiff_to_imageio, [(raster, title, max_value) for title, raster in rasters])
 
     frames = np.array(frames)
 
@@ -61,6 +66,7 @@ def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, 
     buffer.seek(0)
 
     return buffer
+
 
 def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False, title=None, max=None) -> io.BytesIO:
     """Convert a GeoTIFF to a PNG."""

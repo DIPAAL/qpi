@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from pydash.objects import merge
 
-from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png, geo_tiffs_to_video, VideoFormats
+from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png, geo_tiffs_to_video
 from app.routers.v1.heatmap.models.enc_enum import EncCell
 from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
 from app.routers.v1.heatmap.models.mobile_type import MobileType
@@ -169,6 +169,7 @@ def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, ma
 
 def get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)\
         -> tuple[int, int, int, int, int, int, int]:
+    """Based on query inputs, find bounds and spatial resolution of the output raster."""
     spatial_resolution = int(spatial_resolution)
 
     min_x, min_y, max_x, max_y = get_enc_cell_min_max(dw, enc_cell, min_x, min_y, max_x, max_y)
@@ -351,7 +352,3 @@ def multi_heatmap(
                                  'Query-Time': str(query_time_taken_sec),
                                  'Image-Time': str(image_time_taken_sec)
                              })
-
-
-
-
