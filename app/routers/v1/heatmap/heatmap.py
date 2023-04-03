@@ -12,13 +12,13 @@ from app.dependencies import get_dw
 from pydash.objects import merge
 
 from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
-from app.routers.v1.heatmap.models.enc_enum import EncCell
-from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
-from app.routers.v1.heatmap.models.mobile_type import MobileType
-from app.routers.v1.heatmap.models.ship_type import ShipType
-from app.routers.v1.heatmap.models.single_output_formats import SingleOutputFormat
-from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
-from app.routers.v1.heatmap.models.temporal_resolution import TemporalResolution
+from app.routers.v1.heatmap.schemas.enc_enum import EncCell
+from app.routers.v1.heatmap.schemas.heatmap_type import HeatmapType
+from app.routers.v1.heatmap.schemas.mobile_type import MobileType
+from app.routers.v1.heatmap.schemas.ship_type import ShipType
+from app.routers.v1.heatmap.schemas.single_output_formats import SingleOutputFormat
+from app.routers.v1.heatmap.schemas.spatial_resolution import SpatialResolution
+from app.routers.v1.heatmap.schemas.temporal_resolution import TemporalResolution
 from helper_functions import measure_time
 
 router = APIRouter()
