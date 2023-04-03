@@ -1,5 +1,6 @@
 """Utility functions for rendering heatmaps."""
 import io
+
 import numpy as np
 import rasterio as rio
 from matplotlib import colors
@@ -47,6 +48,12 @@ def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO) -> io.BytesIO:
             )
 
             im = plot.get_images()[1]
+
+            vmin, vmax = im.get_clim()
+
+            if vmin == vmax:
+                raise ValueError("Cannot render a heatmap where vmin == vmax.")
+
             fig.colorbar(im, ax=ax, orientation='horizontal', pad=0.06, shrink=0.5)
 
             ax.set_ylim(ax.get_ylim()[::-1])

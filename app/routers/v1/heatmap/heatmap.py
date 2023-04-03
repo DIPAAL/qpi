@@ -12,12 +12,14 @@ from app.dependencies import get_dw
 from pydash.objects import merge
 
 from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
-from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
-from app.routers.v1.heatmap.models.mobile_type import MobileType
-from app.routers.v1.heatmap.models.ship_type import ShipType
-from app.routers.v1.heatmap.models.single_output_formats import SingleOutputFormat
-from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
-from app.routers.v1.heatmap.models.temporal_resolution import TemporalResolution
+from app.routers.v1.heatmap.schemas.enc_enum import EncCell
+from app.routers.v1.heatmap.schemas.heatmap_type import HeatmapType
+from app.routers.v1.heatmap.schemas.mobile_type import MobileType
+from app.routers.v1.heatmap.schemas.ship_type import ShipType
+from app.routers.v1.heatmap.schemas.single_output_formats import SingleOutputFormat
+from app.routers.v1.heatmap.schemas.spatial_resolution import SpatialResolution
+from app.routers.v1.heatmap.schemas.temporal_resolution import TemporalResolution
+from helper_functions import measure_time
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -81,6 +83,7 @@ def single_heatmap(
         max_x: int = Query(default=4395000),
         max_y: int = Query(default=3485000),
         srid: int = Query(default=3034),
+        enc_cell: EncCell = Query(default=None),
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
         end: datetime.datetime = Query(default="2022-02-01T00:00:00Z"),
         heatmap_type: HeatmapType = HeatmapType.count,
@@ -94,11 +97,13 @@ def single_heatmap(
 
     spatial_resolution = int(spatial_resolution)
 
+    min_x, min_y, max_x, max_y = get_enc_cell_min_max(db, enc_cell, min_x, min_y, max_x, max_y)
+
     # extend spatial bounds to fit the spatial resolution
-    min_x = min_x - (min_x % spatial_resolution)
-    min_y = min_y - (min_y % spatial_resolution)
-    max_x = max_x + (spatial_resolution - (max_x % spatial_resolution))
-    max_y = max_y + (spatial_resolution - (max_y % spatial_resolution))
+    min_x = int(min_x - (min_x % spatial_resolution))
+    min_y = int(min_y - (min_y % spatial_resolution))
+    max_x = int(max_x + (spatial_resolution - (max_x % spatial_resolution)))
+    max_y = int(max_y + (spatial_resolution - (max_y % spatial_resolution)))
 
     # get size of the output raster
     width = int((max_x - min_x) / int(spatial_resolution))
@@ -119,6 +124,10 @@ def single_heatmap(
         'min_y': min_y,
         'max_x': max_x,
         'max_y': max_y,
+        'min_cell_x': int(min_x / 5000),
+        'min_cell_y': int(min_y / 5000),
+        'max_cell_x': int(max_x / 5000),
+        'max_cell_y': int(max_y / 5000),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'mobile_types': mobile_types,
@@ -129,15 +138,47 @@ def single_heatmap(
         'end_timestamp': end,
     }
 
-    result = db.execute(text(query), params).fetchone()
+    (result, query_time_taken_sec) = measure_time(lambda: db.execute(text(query), params).fetchone())
 
-    if result is None:
-        raise HTTPException(404, "No heatmap data found given the parameters")
+    if result is None or result[0] is None:
+        raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        return PlainTextResponse(geo_tiff_to_png(result[0].tobytes()).read(), media_type="image/png")
+        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes())
+        return PlainTextResponse(png, media_type="image/png",
+                                 headers={
+                                     'Query-Time': str(query_time_taken_sec),
+                                     'Image-Time': str(image_time_taken_sec)
+                                 })
 
-    return PlainTextResponse(result[0].tobytes(), media_type="image/tiff")
+    return PlainTextResponse(result[0].tobytes(), media_type="image/tiff",
+                             headers={'Query-Time': str(query_time_taken_sec)}
+                             )
+
+
+def try_get_png_from_geotiff(geo_tiff_bytes):
+    """Measure time of converting geotiff to png, and reraise the ValueError as HTTPException."""
+    try:
+        (png, image_time_taken_sec) = measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes).read())
+    except ValueError:
+        raise HTTPException(404, "No heatmap data found given the parameters.")
+    return png, image_time_taken_sec
+
+
+def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, max_y) -> tuple[int, int, int, int]:
+    """Replace min and maxes with enc values if enc_cell is not None."""
+    if enc_cell is None:
+        return min_x, min_y, max_x, max_y
+    # replace min_x, min_y, max_x, max_y with the values from the enc_cell
+    enc_cell_result = db.execute(text("""
+            SELECT
+                ST_XMin(geom) AS min_x,
+                ST_YMin(geom) AS min_y,
+                ST_XMax(geom) AS max_x,
+                ST_YMax(geom) AS max_y
+            FROM reference_geometries WHERE name = :name AND type = 'enc';
+        """), {"name": enc_cell.value}).fetchone()
+    return enc_cell_result.min_x, enc_cell_result.min_y, enc_cell_result.max_x, enc_cell_result.max_y
 
 
 @router.post("mapalgebra/{type}/{spatial_resolution}/{temporal_resolution}")
