@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from pydash.objects import merge
 
-from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
+from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png, geo_tiffs_to_video, VideoFormats
 from app.routers.v1.heatmap.models.enc_enum import EncCell
 from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
 from app.routers.v1.heatmap.models.mobile_type import MobileType
@@ -19,6 +19,7 @@ from app.routers.v1.heatmap.models.ship_type import ShipType
 from app.routers.v1.heatmap.models.single_output_formats import SingleOutputFormat
 from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
 from app.routers.v1.heatmap.models.temporal_resolution import TemporalResolution
+from app.routers.v1.heatmap.schemas.multi_output_format import MultiOutputFormat
 from helper_functions import measure_time
 
 router = APIRouter()
@@ -87,7 +88,7 @@ def single_heatmap(
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
         end: datetime.datetime = Query(default="2022-02-01T00:00:00Z"),
         heatmap_type: HeatmapType = HeatmapType.count,
-        db=Depends(get_dw)):
+        dw=Depends(get_dw)):
     """Return a single heatmap."""
     if srid != 3034:
         raise HTTPException(501, "Only SRID 3034 is supported.")
@@ -95,24 +96,8 @@ def single_heatmap(
     with open(os.path.join(current_file_path, "sql/single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution = int(spatial_resolution)
-
-    min_x, min_y, max_x, max_y = get_enc_cell_min_max(db, enc_cell, min_x, min_y, max_x, max_y)
-
-    # extend spatial bounds to fit the spatial resolution
-    min_x = int(min_x - (min_x % spatial_resolution))
-    min_y = int(min_y - (min_y % spatial_resolution))
-    max_x = int(max_x + (spatial_resolution - (max_x % spatial_resolution)))
-    max_y = int(max_y + (spatial_resolution - (max_y % spatial_resolution)))
-
-    # get size of the output raster
-    width = int((max_x - min_x) / int(spatial_resolution))
-    height = int((max_y - min_y) / int(spatial_resolution))
-
-    # if more than 2 megapixels, ask the user to adjust resolution or bounds
-    if width * height > 2000000:
-        raise HTTPException(400, "The requested raster contains more than 2 megapixels."
-                                 " Please adjust the resolution or bounds.")
+    (spatial_resolution, min_x, min_y, max_x, max_y, width, height) = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
 
     start_date_id = int(start.strftime("%Y%m%d"))
     end_date_id = int(end.strftime("%Y%m%d"))
@@ -138,7 +123,7 @@ def single_heatmap(
         'end_timestamp': end,
     }
 
-    (result, query_time_taken_sec) = measure_time(lambda: db.execute(text(query), params).fetchone())
+    (result, query_time_taken_sec) = measure_time(lambda: dw.execute(text(query), params).fetchone())
 
     if result is None or result[0] is None:
         raise HTTPException(404, "No heatmap data found given the parameters.")
@@ -182,6 +167,30 @@ def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, ma
     return enc_cell_result.min_x, enc_cell_result.min_y, enc_cell_result.max_x, enc_cell_result.max_y
 
 
+def get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)\
+        -> tuple[int, int, int, int, int, int, int]:
+    spatial_resolution = int(spatial_resolution)
+
+    min_x, min_y, max_x, max_y = get_enc_cell_min_max(dw, enc_cell, min_x, min_y, max_x, max_y)
+
+    # extend spatial bounds to fit the spatial resolution
+    min_x = int(min_x - (min_x % spatial_resolution))
+    min_y = int(min_y - (min_y % spatial_resolution))
+    max_x = int(max_x + (spatial_resolution - (max_x % spatial_resolution)))
+    max_y = int(max_y + (spatial_resolution - (max_y % spatial_resolution)))
+
+    # get size of the output raster
+    width = int((max_x - min_x) / int(spatial_resolution))
+    height = int((max_y - min_y) / int(spatial_resolution))
+
+    # if more than 2 megapixels, ask the user to adjust resolution or bounds
+    if width * height > 2000000:
+        raise HTTPException(400, "The requested raster contains more than 2 megapixels."
+                                 " Please adjust the resolution or bounds.")
+
+    return spatial_resolution, min_x, min_y, max_x, max_y, width, height
+
+
 @router.get("/mapalgebra/{heatmap_type}/{spatial_resolution}")
 def mapalgebra_heatmap(
         heatmap_type: HeatmapType = HeatmapType.count,
@@ -213,24 +222,8 @@ def mapalgebra_heatmap(
     with open(os.path.join(current_file_path, "sql/mapalgebra_single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution = int(spatial_resolution)
-
-    min_x, min_y, max_x, max_y = get_enc_cell_min_max(dw, enc_cell, min_x, min_y, max_x, max_y)
-
-    # extend spatial bounds to fit the spatial resolution
-    min_x = int(min_x - (min_x % spatial_resolution))
-    min_y = int(min_y - (min_y % spatial_resolution))
-    max_x = int(max_x + (spatial_resolution - (max_x % spatial_resolution)))
-    max_y = int(max_y + (spatial_resolution - (max_y % spatial_resolution)))
-
-    # get size of the output raster
-    width = int((max_x - min_x) / int(spatial_resolution))
-    height = int((max_y - min_y) / int(spatial_resolution))
-
-    # if more than 2 megapixels, ask the user to adjust resolution or bounds
-    if width * height > 2000000:
-        raise HTTPException(400, "The requested raster contains more than 2 megapixels."
-                                 " Please adjust the resolution or bounds.")
+    (spatial_resolution, min_x, min_y, max_x, max_y, width, height) = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
 
     first_start_date_id = int(first_start.strftime("%Y%m%d"))
     first_end_date_id = int(first_end.strftime("%Y%m%d"))
@@ -285,13 +278,80 @@ def mapalgebra_heatmap(
                              )
 
 
-@router.post("/multi/{type}/{spatial_resolution}/{temporal_resolution}")
+@router.get("/multi/{heatmap_type}/{spatial_resolution}/{temporal_resolution}")
 def multi_heatmap(
-        heatmap_type: HeatmapType,
-        spatial_resolution: SpatialResolution,
-        temporal_resolution: TemporalResolution,
-        # dw_cursor=Depends(get_dw_cursor)
+        heatmap_type: HeatmapType = HeatmapType.count,
+        spatial_resolution: SpatialResolution = SpatialResolution.five_kilometers,
+        temporal_resolution: TemporalResolution = TemporalResolution.daily,
+        output_format: MultiOutputFormat = Query(default=MultiOutputFormat.mp4),
+        fps: int = Query(default=10),
+        min_x: int = Query(default=3600000),
+        min_y: int = Query(default=3030000),
+        max_x: int = Query(default=4395000),
+        max_y: int = Query(default=3485000),
+        srid: int = Query(default=3034),
+        enc_cell: EncCell = Query(default=None),
+        mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
+        ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
+        start: datetime.datetime = Query(default="2021-01-01T00:00:00Z"),
+        end: datetime.datetime = Query(default="2021-02-01T00:00:00Z"),
+        dw=Depends(get_dw)
 ):
     """Return a multi heatmap."""
-    raise NotImplementedError(f"Multi heatmap for {heatmap_type} is not implemented yet."
-                              f" (spatial_resolution={spatial_resolution}, temporal_resolution={temporal_resolution})")
+    if srid != 3034:
+        raise HTTPException(501, "Only SRID 3034 is supported.")
+
+    with open(os.path.join(current_file_path, f"sql/multi_heatmaps/{temporal_resolution.value}.sql"), "r") as f:
+        query = f.read()
+
+    (spatial_resolution, min_x, min_y, max_x, max_y, width, height) = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
+
+    start_date_id = int(start.strftime("%Y%m%d"))
+    end_date_id = int(end.strftime("%Y%m%d"))
+
+    params = {
+        'width': width,
+        'height': height,
+        'min_x': min_x,
+        'min_y': min_y,
+        'max_x': max_x,
+        'max_y': max_y,
+        'min_cell_x': int(min_x / 5000),
+        'min_cell_y': int(min_y / 5000),
+        'max_cell_x': int(max_x / 5000),
+        'max_cell_y': int(max_y / 5000),
+        'spatial_resolution': int(spatial_resolution),
+        'heatmap_type_slug': heatmap_type,
+        'mobile_types': mobile_types,
+        'ship_types': ship_types,
+        'start_date_id': start_date_id,
+        'end_date_id': end_date_id,
+        'start_timestamp': start,
+        'end_timestamp': end,
+    }
+
+    (result, query_time_taken_sec) = measure_time(lambda: dw.execute(text(query), params).fetchall())
+
+    if result is None:
+        raise HTTPException(404, "No heatmap data found given the parameters.")
+
+    max_value = max([r[2] for r in result])
+
+    result = [(r[0], r[1].tobytes()) for r in result]
+
+    video, image_time_taken_sec = measure_time(lambda: geo_tiffs_to_video(result, fps, output_format.value, max_value))
+
+    media_type = f"video/{output_format.value}"
+    if output_format == MultiOutputFormat.gif:
+        media_type = f"image/{output_format.value}"
+
+    return PlainTextResponse(video.read(), media_type=media_type,
+                             headers={
+                                 'Query-Time': str(query_time_taken_sec),
+                                 'Image-Time': str(image_time_taken_sec)
+                             })
+
+
+
+

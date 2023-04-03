@@ -1,5 +1,8 @@
 """Utility functions for rendering heatmaps."""
 import io
+import multiprocessing
+from enum import Enum
+from typing import List, Tuple
 
 import numpy as np
 import rasterio as rio
@@ -8,6 +11,9 @@ from rasterio import MemoryFile
 from rasterio.plot import show
 import matplotlib.pyplot as plt
 from PIL import Image
+import imageio.v2 as imageio
+
+from app.routers.v1.heatmap.schemas.multi_output_format import MultiOutputFormat
 
 satellite = rio.open("qpi/run/references/danish_waters_3034.tiff")
 dipaal_logo = Image.open("qpi/run/references/dipaal.png")
@@ -28,10 +34,37 @@ daisy_logo = np.asarray(daisy_logo)
 dipaal_logo.thumbnail((fig_width * 0.3, fig_height * 0.3), Image.LANCZOS)
 dipaal_logo = np.asarray(dipaal_logo)
 
+class VideoFormats(str, Enum):
+    """Output format for videos enum."""
 
-def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False) -> io.BytesIO:
+    mp4 = "mp4"
+    gif = "gif"
+
+def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title, max):
+    return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max=max))
+
+def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, max_value: float = None):
+    with multiprocessing.Pool() as pool:
+           frames = pool.starmap(geo_tiff_to_imageio, [(raster, title, max_value) for title, raster in rasters])
+
+    frames = np.array(frames)
+
+    # Save the frames to a buffer
+    buffer = io.BytesIO()
+
+    if format == MultiOutputFormat.gif:
+        duration = 1 / fps
+        imageio.mimsave(buffer, frames, duration=duration, format='gif')
+    else:
+        imageio.mimsave(buffer, frames, fps=fps, format=format)
+
+    buffer.seek(0)
+
+    return buffer
+
+def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False, title=None, max=None) -> io.BytesIO:
     """Convert a GeoTIFF to a PNG."""
-    norm = colors.LogNorm(clip=True)
+    norm = colors.LogNorm(clip=True, vmin=1, vmax=max)
     if can_be_negative:
         norm = colors.SymLogNorm(1)
 
@@ -69,6 +102,9 @@ def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False) -> io.Byt
 
             im_height, im_width = daisy_logo.shape[0:2]
             fig.figimage(daisy_logo, fig_width - im_width - 10, 10, zorder=3, alpha=1)
+
+            if title:
+                fig.suptitle(title, fontsize=16)
 
             buffer = io.BytesIO()
             plt.savefig(buffer, format='png', dpi=dpi)
