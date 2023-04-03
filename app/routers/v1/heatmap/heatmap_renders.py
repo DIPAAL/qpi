@@ -36,7 +36,7 @@ dipaal_logo = np.asarray(dipaal_logo)
 
 def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title, max_value):
     """Wrap around creating PNG and loading into ImageIO. Used to multiprocess the creation of PNGs."""
-    return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max=max_value))
+    return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max_value=max_value))
 
 
 def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, max_value: float = None):
@@ -68,9 +68,9 @@ def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, 
     return buffer
 
 
-def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False, title=None, max=None) -> io.BytesIO:
+def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False, title=None, max_value=None) -> io.BytesIO:
     """Convert a GeoTIFF to a PNG."""
-    norm = colors.LogNorm(clip=True, vmin=1, vmax=max)
+    norm = colors.LogNorm(clip=True, vmin=1, vmax=max_value)
     if can_be_negative:
         norm = colors.SymLogNorm(1)
 
