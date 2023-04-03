@@ -41,7 +41,7 @@ class EncCell(str, Enum):
     hanstholm = "Hanstholm"
     hanstholm_havn = "Hanstholm Havn"
     hanstholm_kajnumre = "Hanstholm kajnumre"
-    helsingborg__lands_sdra_udde = "Helsingborg - Ölands Södra Udde"
+    helsingborg_olands_sodra_udde = "Helsingborg - Ölands Södra Udde"
     helsingoer__helsingborg = "Helsingør - Helsingborg"
     hirtshals = "Hirtshals"
     hvide_sande = "Hvide Sande"

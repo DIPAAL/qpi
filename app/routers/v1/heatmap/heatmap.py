@@ -144,7 +144,7 @@ def single_heatmap(
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        image_time_taken_sec, png = try_get_png_from_geotiff(result[0].tobytes())
+        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes())
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
                                      'Query-Time': str(query_time_taken_sec),
@@ -162,7 +162,7 @@ def try_get_png_from_geotiff(geo_tiff_bytes):
         (png, image_time_taken_sec) = measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes).read())
     except ValueError:
         raise HTTPException(404, "No heatmap data found given the parameters.")
-    return image_time_taken_sec, png
+    return png, image_time_taken_sec
 
 
 def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, max_y) -> tuple[int, int, int, int]:
