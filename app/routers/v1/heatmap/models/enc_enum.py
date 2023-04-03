@@ -25,7 +25,7 @@ class EncCell(str, Enum):
     esbjerg_syd = "Esbjerg Syd"
     farvandet_syd_for_fyn_rudkoebing_loeb = "Farvandet syd for Fyn. Rudkøbing Løb"
     farvandet_syd_for_fyn_svendborg_sund = "Farvandet syd for Fyn. Svendborg Sund"
-    flintrnnan = "Flintrännan"
+    flintrannan = "Flintrännan"
     fredericia = "Fredericia"
     fredericia_vest = "Fredericia Vest"
     fredericia_oest = "Fredericia Øst"
