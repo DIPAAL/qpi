@@ -3,12 +3,12 @@ Ship router.
 
 Contains endpoints to retrieve information about a specific ship or a set of ships.
 """
-
 from fastapi import APIRouter, Depends, Path, HTTPException, Query
 from app.dependencies import get_dw
 from sqlalchemy.orm import Session
 from app.routers.v1.ship import models, schemas, crud
 from app.datawarehouse import engine
+import datetime
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -102,16 +102,19 @@ async def ships(
 
         dict: Dictionary with information about a specific ship or a set of ships.
     """
-    # Copy all parameters to a dictionary
+    # Copy all local variables to a dictionary.
+    # Done first to avoid copying variables that are not defined by the client.
     params = locals().copy()
+
+    # Join the dim ship and dim ship type tables to get the ship type information for each ship
     query = dw.query(models.DimShip).join(models.DimShipType)
 
-    # If ship_id is specified, only return that ship
+    # If ship_id is specified, only return information about that ship.
     if ship_id is not None:
         query = query.filter(models.DimShip.ship_id == ship_id)
 
     else:
-        # Remove parameters that are not part of the model and ship_id
+        # List of parameters that are not part of the dim_ship or dim_ship_type and ship_id
         rem_list = ["dw", "skip", "limit", "ship_id"]
 
         for key in rem_list:
@@ -142,13 +145,36 @@ async def ships(
 
     return query.offset(skip).limit(limit).all()
 
+@router.get("/bounds", response_model=list[schemas.Ship])
+async def bounds(
+        # Temporal bounds
+        from_date: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
+        to_date: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
 
-@router.get("/{limit}", response_model=list[schemas.DimShip])
+        # Spatial bounds
+        search_method : schemas.SearchMethodSpatial = Query(default="trajectories"),
+        min_x: int = Query(default=None),
+        min_y: int = Query(default=None),
+        max_x: int = Query(default=None),
+        max_y: int = Query(default=None),
+
+
+        dw: Session = Depends(get_dw)
+
+):
+    fd = int(from_date.timestamp()) if from_date is not None else None
+    td = int(to_date.timestamp()) if to_date is not None else None
+
+    crud.get_ships_by_temporal_bounds(dw, fd, td)
+
+    pass
+
+@router.get("/{limit}", response_model=list[schemas.Ship])
 async def limit(skip: int = 0, limit: int = 100, dw: Session = Depends(get_dw)):
     ships = crud.get_ships(dw, skip=skip, limit=limit)
     return ships
 
-@router.get("/{mmsi}", response_model=schemas.DimShip)
+@router.get("/{mmsi}", response_model=schemas.Ship)
 async def mmsi(
         mmsi: int = Path(..., le=999_999_999),
         dw : Session = Depends(get_dw)
