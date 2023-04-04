@@ -44,7 +44,7 @@ build:
   before_script:
     - export JOB_ID=$(date +%F-%H-%M-%S)
     - export IMAGE_NAME=registry.gitlab.com/shipquerymasters/mvetl:${CI_COMMIT_TAG:-dev-$CI_PIPELINE_ID}
-    - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
+    - kubectl config use-context shipquerymasters/kubernetes-dashboard:dipaal-cluster
   when: manual
 
 pytest:
@@ -90,6 +90,12 @@ deploy-api:
     entrypoint: ['']
   script:
     - export IMAGE_NAME=$CI_REGISTRY_IMAGE:${CI_COMMIT_TAG:-dev-$CI_PIPELINE_ID}
-    - kubectl config use-context shipquerymasters/kubernetes-dashboard:ais-pg-db
+    - kubectl config use-context shipquerymasters/kubernetes-dashboard:dipaal-cluster
     - envsubst < kubernetes/api.yml | kubectl apply -f -
   when: manual
+
+dev:
+  rules:
+    - { if: $GITLAB_CI == 'false' }
+  script:
+    - uvicorn app.api_main:app --reload

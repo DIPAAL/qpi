@@ -11,7 +11,7 @@ def get_dw_cursor():
 
 
 def get_dw():
-    """Return a session to the data warehouse database."""
+    """Use the globally scoped sessionmaker to create a db session scoped to the request."""
     dw = SessionLocal()
     try:
         yield dw
