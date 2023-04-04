@@ -1,15 +1,16 @@
+import json
 import os
 import pandas as pd
-import json
-from typing import List
-from fastapi import APIRouter, Depends, Query
-from fastapi.responses import JSONResponse
+
 from app.dependencies import get_dw
 from app.routers.v1.cell.models.cell_fact import FactCell
-from sqlalchemy import text
-from sqlalchemy.orm import Session
 from app.routers.v1.cell.models.cell_size import CellSize
 from datetime import datetime
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+from typing import List
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -52,7 +53,12 @@ def cell_facts(
 
 
 def cell_fact_to_json(db_row: pd.Series):
-    """Documentation"""
+    """
+    Convert from pandas series representation to return type as json.
+
+    Keyword Arguments:
+        db_row: Pandas series containing a single cell fact
+    """
     return f""" {{
         "x": {db_row['x']},
         "y": {db_row['y']},
