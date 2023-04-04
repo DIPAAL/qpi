@@ -6,6 +6,7 @@ from typing import Tuple, Callable, TypeVar
 from time import perf_counter
 import psycopg2
 from constants import ROOT_DIR
+from sqlalchemy import text
 
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
@@ -119,3 +120,20 @@ def query_apply_filters(query, filters):
         query = query.filter(filter)
 
     return query
+
+
+def get_sql_file_path(path_from_root):
+    return os.path.join(ROOT_DIR, f'{path_from_root}')
+
+def get_sql_file_contents(path_from_root):
+    with open(get_sql_file_path(path_from_root), 'r') as f:
+        return f.read()
+
+def get_sql_file_contents_as_text(path_from_root):
+    return text(get_sql_file_contents(path_from_root))
+
+def run_sql_file(path_from_root, dw):
+    return dw.execute(get_sql_file_contents_as_text(path_from_root))
+
+def run_sql_file_with_params(path_from_root, dw, params):
+    return dw.execute(get_sql_file_contents_as_text(path_from_root), params)

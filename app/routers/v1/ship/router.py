@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.routers.v1.ship import models, schemas, crud
 from app.datawarehouse import engine
 import datetime
+import pandas as pd
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -145,11 +146,11 @@ async def ships(
 
     return query.offset(skip).limit(limit).all()
 
-@router.get("/bounds", response_model=list[schemas.Ship])
+@router.get("/bounds")
 async def bounds(
         # Temporal bounds
-        from_date: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
-        to_date: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
+        from_date: datetime.datetime = Query(default="2022-01-02T00:00:00Z"),
+        to_date: datetime.datetime = Query(default="2022-01-02T00:00:00Z"),
 
         # Spatial bounds
         search_method : schemas.SearchMethodSpatial = Query(default="trajectories"),
@@ -162,12 +163,13 @@ async def bounds(
         dw: Session = Depends(get_dw)
 
 ):
-    fd = int(from_date.timestamp()) if from_date is not None else None
-    td = int(to_date.timestamp()) if to_date is not None else None
+    params = {
+        "from_date": int(from_date.strftime("%Y%m%d")),
+        "to_date": int(to_date.strftime("%Y%m%d"))
+    }
+    df = pd.read_sql(crud.get_ships_by_temporal_bounds(dw, params["from_date"], params["to_date"]), dw.bind.connect())
+    return df.to_dict(orient="records")
 
-    crud.get_ships_by_temporal_bounds(dw, fd, td)
-
-    pass
 
 @router.get("/{limit}", response_model=list[schemas.Ship])
 async def limit(skip: int = 0, limit: int = 100, dw: Session = Depends(get_dw)):
