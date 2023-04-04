@@ -175,7 +175,18 @@ def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, ma
 
 def get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)\
         -> tuple[int, int, int, int, int, int, int]:
-    """Based on query inputs, find bounds and spatial resolution of the output raster."""
+    """
+    Based on query inputs, find bounds and spatial resolution of the output raster.
+
+    Keyword arguments:
+        dw: database connection
+        spatial_resolution: spatial resolution of the output raster
+        min_x: minimum x coordinate of the output raster
+        min_y: minimum y coordinate of the output raster
+        max_x: maximum x coordinate of the output raster
+        max_y: maximum y coordinate of the output raster
+        enc_cell: ENC cell name (optional)
+    """
     spatial_resolution = int(spatial_resolution)
 
     min_x, min_y, max_x, max_y = get_enc_cell_min_max(dw, enc_cell, min_x, min_y, max_x, max_y)
