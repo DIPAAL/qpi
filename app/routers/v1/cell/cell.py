@@ -24,12 +24,12 @@ def cell_facts(
         x_max: int = Query(example='4395000'),
         y_max: int = Query(example='3485000'),
         cell_size: CellSize = Query(default=CellSize.meter_5000),
-        srid: int = Query(default=4326),
+        srid: int = Query(default=3034),
         upper_timestamp: datetime = Query(default=None, example='2022-01-01T00:00:00Z'),
         lower_timestamp: datetime = Query(default=None, example='2022-01-01T00:00:00Z'),
-        stopped: bool = Query(default=None),
-        limit: int = Query(default=None),
-        offset: int = Query(default=None),
+        stopped: List[bool] = Query(default=[True, False]),
+        limit: int = Query(default=1000, ge=0),
+        offset: int = Query(default=0, ge=0),
         dw: Session = Depends(get_dw)) -> List[FactCell]:
     """Return cell facts."""
     with open(os.path.join(current_file_path, 'sql/fact_cell_extract.sql')) as file:
@@ -40,12 +40,12 @@ def cell_facts(
         'ymin': y_min,
         'xmax': x_max,
         'ymax': y_max,
-        'srid': 4326 if srid is None else srid,
+        'srid': srid,
         'stopped': [True, False] if stopped is None else [stopped],
         'upper_timestamp': datetime.max if upper_timestamp is None else upper_timestamp,
         'lower_timestamp': datetime.min if lower_timestamp is None else lower_timestamp,
-        'limit': 1000 if limit is None else limit,
-        'offset': 0 if offset is None else offset
+        'limit': limit,
+        'offset': offset
     }
     df = pd.read_sql(text(query), dw.bind.connect(), params=parameters).fillna("null")
 
