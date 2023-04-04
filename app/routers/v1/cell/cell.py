@@ -1,5 +1,4 @@
 """Cell endpoint controller for the DIPAAL api."""
-import json
 import os
 import pandas as pd
 
