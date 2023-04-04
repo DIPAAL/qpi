@@ -108,32 +108,21 @@ def get_connection():
     )
 
 
-def query_apply_filters(query, filters):
-    """
-    Apply filters to a query.
-
-    Keyword arguments:
-        query: the query to apply the filters to
-        filters: the filters to apply
-    """
-    for filter in filters:
-        query = query.filter(filter)
-
-    return query
-
-
-def get_sql_file_path(path_from_root):
+def get_file_path(path_from_root):
     return os.path.join(ROOT_DIR, f'{path_from_root}')
 
-def get_sql_file_contents(path_from_root):
-    with open(get_sql_file_path(path_from_root), 'r') as f:
+def get_file_contents(path_from_root):
+    with open(get_file_path(path_from_root), 'r') as f:
         return f.read()
 
-def get_sql_file_contents_as_text(path_from_root):
-    return text(get_sql_file_contents(path_from_root))
+def get_file_contents_as_text(path_from_root):
+    return text(get_file_contents(path_from_root))
 
 def run_sql_file(path_from_root, dw):
-    return dw.execute(get_sql_file_contents_as_text(path_from_root))
+    return dw.execute(get_file_contents_as_text(path_from_root))
 
 def run_sql_file_with_params(path_from_root, dw, params):
-    return dw.execute(get_sql_file_contents_as_text(path_from_root), params)
+    return dw.execute(get_file_contents_as_text(path_from_root), params)
+
+def brackets_and_content_to_string(query, bracket_content, new_string):
+    return query.format(**{bracket_content: new_string})

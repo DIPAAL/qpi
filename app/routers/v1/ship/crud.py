@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.routers.v1.ship import models
-from helper_functions import get_sql_file_contents_as_text
+from helper_functions import get_file_contents_as_text
 import os
 
 # Path to sql files
@@ -23,5 +23,5 @@ def get_ships_by_spatial_bounds(dw: Session, min_x, min_y, max_x, max_y):
 
 
 def get_ships_by_temporal_bounds(dw: Session, from_date, to_date):
-    path = os.path.join(sql_path, "spatial_bounds.sql")
-    return dw.execute(get_sql_file_contents_as_text(path), {"from_date": from_date, "to_date": to_date})
+    path = os.path.join(sql_path, "temporal_bounds.sql")
+    return dw.execute(get_file_contents_as_text(path), {"from_date": from_date, "to_date": to_date})

@@ -10,11 +10,18 @@ from app.routers.v1.ship import models, schemas, crud
 from app.datawarehouse import engine
 import datetime
 import pandas as pd
+# FIXME: This is a temporary fix to get the sql files to work
+from helper_functions import brackets_and_content_to_string, get_file_contents
+from sqlalchemy import text
+import os
 
 models.Base.metadata.create_all(bind=engine)
 
 router = APIRouter()
 
+SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
+SQL_PATH_CELLS = os.path.join(SQL_PATH, "cells")
+SQL_PATH_TRAJECTORIES = os.path.join(SQL_PATH, "trajectories")
 
 @router.get("/", response_model=list[schemas.Ship])
 async def ships(
@@ -148,35 +155,76 @@ async def ships(
 
 @router.get("/bounds")
 async def bounds(
+        skip: int = 0,
+        limit: int = 100,
+
         # Temporal bounds
-        from_date: datetime.datetime = Query(default="2022-01-02T00:00:00Z"),
+        from_date: datetime.datetime = Query(default="2021-01-02T00:00:00Z"),
         to_date: datetime.datetime = Query(default="2022-01-02T00:00:00Z"),
 
         # Spatial bounds
-        search_method : schemas.SearchMethodSpatial = Query(default="trajectories"),
-        min_x: int = Query(default=None),
-        min_y: int = Query(default=None),
-        max_x: int = Query(default=None),
-        max_y: int = Query(default=None),
-
+        search_method : schemas.SearchMethodSpatial = Query(default="cell_1000m"),
+        min_x: int = Query(default=4050000),
+        min_y: int = Query(default=4051000),
+        max_x: int = Query(default=3075000),
+        max_y: int = Query(default=3076000),
 
         dw: Session = Depends(get_dw)
 
 ):
     params = {
+        "xmin": min_x,
+        "ymin": min_y,
+        "xmax": max_x,
+        "ymax": max_y,
         "from_date": int(from_date.strftime("%Y%m%d")),
-        "to_date": int(to_date.strftime("%Y%m%d"))
+        "to_date": int(to_date.strftime("%Y%m%d")),
+        "limit": limit,
+        "offset": skip,
     }
-    df = pd.read_sql(crud.get_ships_by_temporal_bounds(dw, params["from_date"], params["to_date"]), dw.bind.connect())
+    query_type = []
+
+    # FIXME: Reimplement this with a more elegant solution using dictionaries
+    # Check if only temporal bounds are specified
+    temporal_params = [params["from_date"], params["to_date"]]
+    if None not in temporal_params:
+        query_type.append("Temporal")
+
+    # Check if only spatial bounds are specified
+    spatial_params = [params["xmin"], params["ymin"], params["xmax"], params["ymax"]]
+    if None not in spatial_params:
+        query_type.append("Spatial")
+        if None in spatial_params:
+            raise HTTPException(status_code=400, detail="Spatial bounds are not fully specified.")
+
+    if query_type:
+        if "Temporal" in query_type and "Spatial" in query_type:
+            if search_method is "trajectories":
+                path = os.path.join(SQL_PATH_TRAJECTORIES, "spatial_temporal_bounds.sql")
+            else:
+                path = os.path.join(SQL_PATH_CELLS, "spatial_temporal_bounds.sql")
+        elif "Temporal" in query_type:
+            if search_method is "trajectories":
+                path = os.path.join(SQL_PATH_TRAJECTORIES, "temporal_bounds.sql")
+            else:
+                path = os.path.join(SQL_PATH_CELLS, "temporal_bounds.sql")
+        elif "Spatial" in query_type:
+            if search_method is "trajectories":
+                path = os.path.join(SQL_PATH_TRAJECTORIES, "spatial_bounds.sql")
+            else:
+                path = os.path.join(SQL_PATH_CELLS, "spatial_bounds.sql")
+        else:
+            # TODO: Add filter support so simple queries can be performed
+            raise HTTPException(status_code=400, detail="Invalid query")
+
+    query = get_file_contents(path)
+    if search_method is not "trajectories":
+        query = brackets_and_content_to_string(query, "CELL_SIZE", search_method.value)
+    df = pd.read_sql(text(query), dw.bind.connect(), params=params)
     return df.to_dict(orient="records")
 
 
-@router.get("/{limit}", response_model=list[schemas.Ship])
-async def limit(skip: int = 0, limit: int = 100, dw: Session = Depends(get_dw)):
-    ships = crud.get_ships(dw, skip=skip, limit=limit)
-    return ships
-
-@router.get("/{mmsi}", response_model=schemas.Ship)
+@router.get("/{mmsi}")
 async def mmsi(
         mmsi: int = Path(..., le=999_999_999),
         dw : Session = Depends(get_dw)
@@ -189,8 +237,8 @@ async def mmsi(
 
     Returns: A list containing information about the ship
     """
-    dw_ship = crud.get_ship_by_mmsi(dw, mmsi)
-    if dw_ship is None:
-        raise HTTPException(status_code=404, detail="Ship not found")
-    return dw_ship
+    path = os.path.join(SQL_PATH, "ship_by_mmsi.sql")
+    query = get_file_contents(path)
+    df = pd.read_sql(text(query), dw.bind.connect(), params={"mmsi": mmsi})
+    return df.to_dict(orient="records")
 
