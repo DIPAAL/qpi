@@ -35,7 +35,14 @@ dipaal_logo = np.asarray(dipaal_logo)
 
 
 def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title, max_value):
-    """Wrap around creating PNG and loading into ImageIO. Used to multiprocess the creation of PNGs."""
+    """
+    Wrap around creating PNG and loading into ImageIO. Used to multiprocess the creation of PNGs.
+
+    Keyword arguments:
+        geo_tiff_bytes: Binary representation of the GeoTIFF
+        title: title which should be shown on the image
+        max_value: max value for the heatmap, used for aligning the color scale.
+    """
     return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max_value=max_value))
 
 
@@ -68,8 +75,21 @@ def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, 
     return buffer
 
 
-def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO, can_be_negative=False, title=None, max_value=None) -> io.BytesIO:
-    """Convert a GeoTIFF to a PNG."""
+def geo_tiff_to_png(
+        geo_tiff_bytes: io.BytesIO,
+        can_be_negative: bool = False,
+        title: str = None,
+        max_value: float = None
+) -> io.BytesIO:
+    """
+    Convert a GeoTIFF to a PNG.
+
+    Keyword arguments:
+        geo_tiff_bytes: binary representation of the GeoTIFF
+        can_be_negative: whether the geotiff can be negative, i.e. whether a colormap should support negative values.
+        title: title which should be shown on the image
+        max_value: max value for the heatmap, used for aligning the color scale.
+    """
     norm = colors.LogNorm(clip=True, vmin=1, vmax=max_value)
     if can_be_negative:
         norm = colors.SymLogNorm(1)

@@ -96,7 +96,7 @@ def single_heatmap(
     with open(os.path.join(current_file_path, "sql/single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    (spatial_resolution, min_x, min_y, max_x, max_y, width, height) = \
+    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
         get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
 
     start_date_id = int(start.strftime("%Y%m%d"))
@@ -123,7 +123,7 @@ def single_heatmap(
         'end_timestamp': end,
     }
 
-    (result, query_time_taken_sec) = measure_time(lambda: dw.execute(text(query), params).fetchone())
+    result, query_time_taken_sec = measure_time(lambda: dw.execute(text(query), params).fetchone())
 
     if result is None or result[0] is None:
         raise HTTPException(404, "No heatmap data found given the parameters.")
@@ -142,9 +142,15 @@ def single_heatmap(
 
 
 def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
-    """Measure time of converting geotiff to png, and reraise the ValueError as HTTPException."""
+    """
+    Measure time of converting geotiff to png, and reraise the ValueError as HTTPException.
+
+    Keyword arguments:
+        geo_tiff_bytes: binary representation of geotiff
+        can_be_negative: whether the geotiff can be negative, i.e. whether a colormap should support negative values.
+    """
     try:
-        (png, image_time_taken_sec) = \
+        png, image_time_taken_sec = \
             measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
     except ValueError:
         raise HTTPException(404, "No heatmap data found given the parameters.")
@@ -223,7 +229,7 @@ def mapalgebra_heatmap(
     with open(os.path.join(current_file_path, "sql/mapalgebra_single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    (spatial_resolution, min_x, min_y, max_x, max_y, width, height) = \
+    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
         get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
 
     first_start_date_id = int(first_start.strftime("%Y%m%d"))
@@ -261,7 +267,7 @@ def mapalgebra_heatmap(
         'second_end_timestamp': second_end,
     }
 
-    (result, query_time_taken_sec) = measure_time(lambda: dw.execute(text(query), params).fetchone())
+    result, query_time_taken_sec = measure_time(lambda: dw.execute(text(query), params).fetchone())
 
     if result is None or result[0] is None:
         raise HTTPException(404, "No heatmap data found given the parameters.")
@@ -305,7 +311,7 @@ def multi_heatmap(
     with open(os.path.join(current_file_path, f"sql/multi_heatmaps/{temporal_resolution.value}.sql"), "r") as f:
         query = f.read()
 
-    (spatial_resolution, min_x, min_y, max_x, max_y, width, height) = \
+    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
         get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
 
     start_date_id = int(start.strftime("%Y%m%d"))
@@ -332,7 +338,7 @@ def multi_heatmap(
         'end_timestamp': end,
     }
 
-    (result, query_time_taken_sec) = measure_time(lambda: dw.execute(text(query), params).fetchall())
+    result, query_time_taken_sec = measure_time(lambda: dw.execute(text(query), params).fetchall())
 
     if result is None:
         raise HTTPException(404, "No heatmap data found given the parameters.")
