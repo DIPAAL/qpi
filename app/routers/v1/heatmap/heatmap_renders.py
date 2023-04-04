@@ -90,7 +90,7 @@ def geo_tiff_to_png(
         title: title which should be shown on the image
         max_value: max value for the heatmap, used for aligning the color scale.
     """
-    norm = colors.LogNorm(clip=True, vmin=0, vmax=max_value)
+    norm = colors.LogNorm(clip=True, vmin=1, vmax=max_value)
     if can_be_negative:
         norm = colors.SymLogNorm(1)
 

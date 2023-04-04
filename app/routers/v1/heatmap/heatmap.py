@@ -152,8 +152,10 @@ def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
     try:
         png, image_time_taken_sec = \
             measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
-    except ValueError:
-        raise HTTPException(404, "No heatmap data found given the parameters.")
+    except ValueError as e:
+        if "vmin == vmax" in str(e):
+            raise HTTPException(404, "No heatmap data found given the parameters.")
+        raise e
     return png, image_time_taken_sec
 
 
