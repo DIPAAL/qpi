@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
-class DirectionModel(BaseModel):
+class Direction(BaseModel):
     begin: str
     end: str

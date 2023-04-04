@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import IntEnum
 
-class CellSize(int, Enum):
+class CellSize(IntEnum):
     meter_50 = 50,
     meter_200 = 200,
     meter_1000 = 1000,

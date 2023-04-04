@@ -1,18 +1,20 @@
-from pydantic import BaseModel
 from datetime import datetime
-from app.routers.v1.cell.models.direction import DirectionModel
-from app.routers.v1.cell.models.ship import ShipModel
+from typing import List
+from pydantic import BaseModel
+from app.routers.v1.cell.models.direction import Direction
+from app.routers.v1.cell.models.ship import Ship
 
-class CellFact(BaseModel):
+class FactCell(BaseModel):
     x: int
     y: int
     trajectory_sub_id: int
     entry_timestamp: datetime
     exit_timestamp: datetime
     navigational_status: str
-    direction: DirectionModel
+    direction: List[Direction]
     sog: float
     delta_cog: float
-    draught: int
+    delta_heading: float
+    draught: float
     stopped: bool
-    ship: ShipModel
+    ship: Ship
