@@ -1,5 +1,7 @@
 """Model partly representing a ship in the DIPAAL data warehouse."""
 from pydantic import BaseModel
+from app.routers.v1.heatmap.models.mobile_type import MobileType
+from app.routers.v1.heatmap.models.ship_type import ShipType
 
 
 class Ship(BaseModel):
@@ -8,6 +10,6 @@ class Ship(BaseModel):
     mmsi: int
     imo: int
     name: str
-    type: str
-    mobile: str
+    type: ShipType
+    mobile: MobileType
     flag_state: str
