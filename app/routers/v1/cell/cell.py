@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -49,39 +49,42 @@ def cell_facts(
     }
     df = pd.read_sql(text(query), dw.bind.connect(), params=parameters).fillna("null")
 
-    raw_json = [cell_fact_to_json(row) for _, row in df.iterrows()]
-    return JSONResponse(json.dumps(raw_json, indent=2), media_type='application/json')
+    dicts = [cell_fact_to_dict(row) for _, row in df.iterrows()]
+    return JSONResponse(dicts, media_type='application/json')
 
 
-def cell_fact_to_json(db_row: pd.Series):
+TIMESTAMP_FORMAT: str = '%Y-%m-%dT%H:%M:%SZ'
+
+
+def cell_fact_to_dict(db_row: pd.Series) -> Dict:
     """
-    Convert from pandas series representation to return type as json.
+    Convert from pandas series representation to return type as a dictionary.
 
     Keyword Arguments:
         db_row: Pandas series containing a single cell fact
     """
-    return f""" {{
-        "x": {db_row['x']},
-        "y": {db_row['y']},
-        "trajectory_sub_id": {db_row['trajectory_sub_id']},
-        "entry_timestamp": "{db_row['entry_timestamp']}",
-        "exit_timestamp": "{db_row['exit_timestamp']}",
-        "navigational_status": "{db_row['navigational_status']}",
-        "direction": {{
-            "begin": "{db_row['begin']}",
-            "end": "{db_row['end']}"
-        }},
-        "sog": {db_row['sog']},
-        "delta_cog": {db_row['delta_cog']},
-        "delta_heading": {db_row['delta_heading']},
-        "draught": {db_row['draught']},
-        "stopped": {str(db_row['stopped']).lower()},
-        "ship": {{
-            "mmsi": {db_row['mmsi']},
-            "imo": {db_row['imo']},
-            "name": "{db_row['name']}",
-            "type": "{db_row['ship_type']}",
-            "mobile": "{db_row['mobile_type']}",
-            "flag_state": "{db_row['flag_state']}"
-        }}
-    }}"""
+    return {
+        'x': db_row['x'],
+        'y': db_row['y'],
+        'trajectory_sub_id': db_row['trajectory_sub_id'],
+        'entry_timestamp': db_row['entry_timestamp'].strftime(TIMESTAMP_FORMAT),
+        'exit_timestamp': db_row['exit_timestamp'].strftime(TIMESTAMP_FORMAT),
+        'navigational_status': db_row['navigational_status'],
+        'direction': {
+            'begin': db_row['begin'],
+            'end': db_row['end']
+        },
+        'sog': db_row['sog'],
+        'delta_cog': db_row['delta_cog'],
+        'delta_heading': db_row['delta_heading'],
+        'draught': db_row['draught'],
+        'stopped': str(db_row['stopped']).lower(),
+        'ship': {
+            'mmsi': db_row['mmsi'],
+            'imo': db_row['imo'],
+            'name': db_row['name'],
+            'type': db_row['ship_type'],
+            'mobile': db_row['mobile_type'],
+            'flag_state': db_row['flag_state']
+        }
+    }
