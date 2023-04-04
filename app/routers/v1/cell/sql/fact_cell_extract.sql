@@ -4,7 +4,7 @@ SELECT
     fc.trajectory_sub_id,
     timestamp_from_date_time_id(fc.entry_date_id, fc.entry_time_id) AS entry_timestamp,
     timestamp_from_date_time_id(fc.exit_date_id, fc.exit_time_id) AS exit_timestamp,
-    fc.nav_status_id AS navigational_status,
+    dns.nav_status AS navigational_status,
     dd."from" AS begin,
     dd."to" AS end,
     fc.sog,
@@ -18,12 +18,13 @@ SELECT
     dst.ship_type,
     dst.mobile_type,
     ds.flag_state
-FROM fact_cell_5000m fc
-INNER JOIN dim_cell_5000m dc ON fc.cell_x = dc.x AND fc.cell_y = dc.y AND fc.partition_id = dc.partition_id
-INNER JOIN dim_ship ds on fc.ship_id = ds.ship_id
-INNER JOIN dim_direction dd on fc.direction_id = dd.direction_id
-INNER JOIN dim_ship_type dst on ds.ship_type_id = dst.ship_type_id
-WHERE ST_Intersects(dc.geom, st_makeenvelope(:xmin, :ymin, :xmax, :ymax, :srid))
+FROM fact_cell_{CELL_SIZE}m fc
+INNER JOIN dim_cell_{CELL_SIZE}m dc ON fc.cell_x = dc.x AND fc.cell_y = dc.y AND fc.partition_id = dc.partition_id
+INNER JOIN dim_ship ds ON fc.ship_id = ds.ship_id
+INNER JOIN dim_direction dd ON fc.direction_id = dd.direction_id
+INNER JOIN dim_ship_type dst ON ds.ship_type_id = dst.ship_type_id
+INNER JOIN dim_nav_status dns ON fc.nav_status_id = dns.nav_status_id
+WHERE ST_Intersects(dc.geom, ST_Transform(st_makeenvelope(:xmin, :ymin, :xmax, :ymax, :srid), 3034))
   AND fc.infer_stopped = ANY(:stopped)
   AND timestamp_from_date_time_id(fc.entry_date_id, fc.entry_time_id) < :upper_timestamp
   AND timestamp_from_date_time_id(fc.entry_date_id, fc.entry_time_id) > :lower_timestamp
