@@ -5,7 +5,7 @@ import pandas as pd
 
 from app.dependencies import get_dw
 from app.routers.v1.cell.models.cell_fact import FactCell
-from app.routers.v1.cell.models.cell_size import CellSize
+from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
@@ -23,7 +23,7 @@ def cell_facts(
         y_min: int = Query(example='3030000'),
         x_max: int = Query(example='4395000'),
         y_max: int = Query(example='3485000'),
-        cell_size: CellSize = Query(default=CellSize.meter_5000),
+        cell_size: SpatialResolution = Query(default=SpatialResolution.five_kilometers),
         srid: int = Query(default=3034),
         upper_timestamp: datetime = Query(default=None, example='2022-01-01T00:00:00Z'),
         lower_timestamp: datetime = Query(default=None, example='2022-01-01T00:00:00Z'),
@@ -33,7 +33,7 @@ def cell_facts(
         dw: Session = Depends(get_dw)) -> List[FactCell]:
     """Return cell facts."""
     with open(os.path.join(current_file_path, 'sql/fact_cell_extract.sql')) as file:
-        query = file.read().format(CELL_SIZE=cell_size)
+        query = file.read().format(CELL_SIZE=int(cell_size))
 
     parameters = {
         'xmin': x_min,
