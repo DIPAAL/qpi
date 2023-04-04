@@ -1,5 +1,7 @@
 """Utility functions for rendering heatmaps."""
 import io
+import multiprocessing
+from typing import List, Tuple
 
 import numpy as np
 import rasterio as rio
@@ -8,6 +10,9 @@ from rasterio import MemoryFile
 from rasterio.plot import show
 import matplotlib.pyplot as plt
 from PIL import Image
+import imageio.v2 as imageio
+
+from app.routers.v1.heatmap.schemas.multi_output_format import MultiOutputFormat
 
 satellite = rio.open("qpi/run/references/danish_waters_3034.tiff")
 dipaal_logo = Image.open("qpi/run/references/dipaal.png")
@@ -29,8 +34,66 @@ dipaal_logo.thumbnail((fig_width * 0.3, fig_height * 0.3), Image.LANCZOS)
 dipaal_logo = np.asarray(dipaal_logo)
 
 
-def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO) -> io.BytesIO:
-    """Convert a GeoTIFF to a PNG."""
+def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title: str, max_value: float):
+    """
+    Wrap around creating PNG and loading into ImageIO. Used to multiprocess the creation of PNGs.
+
+    Keyword arguments:
+        geo_tiff_bytes: Binary representation of the GeoTIFF
+        title: title which should be shown on the image
+        max_value: max value for the heatmap, used for aligning the color scale.
+    """
+    return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max_value=max_value))
+
+
+def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, max_value: float = None):
+    """
+    Create a video from a list of GeoTIFFs.
+
+    Keyword arguments:
+        rasters: list of tuples of (title, GeoTIFF bytes)
+        fps: frames per second
+        format: output format
+        max_value: max value for the heatmap
+    """
+    with multiprocessing.Pool() as pool:
+        frames = pool.starmap(geo_tiff_to_imageio, [(raster, title, max_value) for title, raster in rasters])
+
+    frames = np.array(frames)
+
+    # Save the frames to a buffer
+    buffer = io.BytesIO()
+
+    if format == MultiOutputFormat.gif:
+        duration = 1 / fps
+        imageio.mimsave(buffer, frames, duration=duration, format='gif')
+    else:
+        imageio.mimsave(buffer, frames, fps=fps, format=format)
+
+    buffer.seek(0)
+
+    return buffer
+
+
+def geo_tiff_to_png(
+        geo_tiff_bytes: io.BytesIO,
+        can_be_negative: bool = False,
+        title: str = None,
+        max_value: float = None
+) -> io.BytesIO:
+    """
+    Convert a GeoTIFF to a PNG.
+
+    Keyword arguments:
+        geo_tiff_bytes: binary representation of the GeoTIFF
+        can_be_negative: whether the geotiff can be negative, i.e. whether a colormap should support negative values.
+        title: title which should be shown on the image
+        max_value: max value for the heatmap, used for aligning the color scale.
+    """
+    norm = colors.LogNorm(clip=True, vmin=1, vmax=max_value)
+    if can_be_negative:
+        norm = colors.SymLogNorm(1)
+
     with MemoryFile(geo_tiff_bytes) as memfile:
         with memfile.open() as raster:
             fig, ax = plt.subplots(figsize=fig_size)
@@ -43,7 +106,7 @@ def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO) -> io.BytesIO:
             plot = show(
                 raster,
                 ax=ax, cmap='turbo',
-                norm=colors.LogNorm(clip=True),
+                norm=norm,
                 interpolation='none',
             )
 
@@ -65,6 +128,9 @@ def geo_tiff_to_png(geo_tiff_bytes: io.BytesIO) -> io.BytesIO:
 
             im_height, im_width = daisy_logo.shape[0:2]
             fig.figimage(daisy_logo, fig_width - im_width - 10, 10, zorder=3, alpha=1)
+
+            if title:
+                fig.suptitle(title, fontsize=16)
 
             buffer = io.BytesIO()
             plt.savefig(buffer, format='png', dpi=dpi)
