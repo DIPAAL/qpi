@@ -49,7 +49,7 @@ def cell_facts(
     df = pd.read_sql(text(query), dw.bind.connect(), params=parameters).fillna("null")
 
     dicts = [cell_fact_to_dict(row) for _, row in df.iterrows()]
-    return JSONResponse(dicts, media_type='application/json')
+    return JSONResponse(dicts)
 
 
 TIMESTAMP_FORMAT: str = '%Y-%m-%dT%H:%M:%SZ'
