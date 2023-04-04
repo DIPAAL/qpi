@@ -12,13 +12,13 @@ from app.dependencies import get_dw
 from pydash.objects import merge
 
 from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png, geo_tiffs_to_video
-from app.routers.v1.heatmap.models.enc_enum import EncCell
-from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
-from app.routers.v1.heatmap.models.mobile_type import MobileType
-from app.routers.v1.heatmap.models.ship_type import ShipType
-from app.routers.v1.heatmap.models.single_output_formats import SingleOutputFormat
-from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
-from app.routers.v1.heatmap.models.temporal_resolution import TemporalResolution
+from app.routers.v1.heatmap.schemas.enc_enum import EncCell
+from app.routers.v1.heatmap.schemas.heatmap_type import HeatmapType
+from app.routers.v1.heatmap.schemas.mobile_type import MobileType
+from app.routers.v1.heatmap.schemas.ship_type import ShipType
+from app.routers.v1.heatmap.schemas.single_output_formats import SingleOutputFormat
+from app.routers.v1.heatmap.schemas.spatial_resolution import SpatialResolution
+from app.routers.v1.heatmap.schemas.temporal_resolution import TemporalResolution
 from app.routers.v1.heatmap.schemas.multi_output_format import MultiOutputFormat
 from helper_functions import measure_time
 
@@ -129,7 +129,7 @@ def single_heatmap(
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        image_time_taken_sec, png = try_get_png_from_geotiff(result[0].tobytes())
+        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes())
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
                                      'Query-Time': str(query_time_taken_sec),
@@ -154,7 +154,7 @@ def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
             measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
     except ValueError:
         raise HTTPException(404, "No heatmap data found given the parameters.")
-    return image_time_taken_sec, png
+    return png, image_time_taken_sec
 
 
 def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, max_y) -> tuple[int, int, int, int]:
