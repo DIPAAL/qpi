@@ -34,7 +34,7 @@ dipaal_logo.thumbnail((fig_width * 0.3, fig_height * 0.3), Image.LANCZOS)
 dipaal_logo = np.asarray(dipaal_logo)
 
 
-def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title, max_value):
+def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title: str, max_value: float):
     """
     Wrap around creating PNG and loading into ImageIO. Used to multiprocess the creation of PNGs.
 
