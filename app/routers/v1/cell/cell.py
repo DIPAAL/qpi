@@ -1,3 +1,4 @@
+"""Cell endpoint controller for the DIPAAL api."""
 import json
 import os
 import pandas as pd
@@ -15,6 +16,7 @@ from typing import List
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 
+
 @router.get('')
 def cell_facts(
         x_min: int = Query(example='3600000'),
@@ -29,9 +31,8 @@ def cell_facts(
         limit: int = Query(default=None),
         offset: int = Query(default=None),
         dw: Session = Depends(get_dw)) -> List[FactCell]:
-    
-
-    with open(os.path.join(current_file_path, f'sql/fact_cell_extract.sql')) as file:
+    """Return cell facts."""
+    with open(os.path.join(current_file_path, 'sql/fact_cell_extract.sql')) as file:
         query = file.read().format(CELL_SIZE=cell_size)
 
     parameters = {

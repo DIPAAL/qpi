@@ -1,10 +1,15 @@
+"""Model representing a cell fact in the DIPAAL data warehouse."""
+
 from datetime import datetime
 from typing import List
 from pydantic import BaseModel
 from app.routers.v1.cell.models.direction import Direction
 from app.routers.v1.cell.models.ship import Ship
 
+
 class FactCell(BaseModel):
+    """Fact cell model."""
+
     x: int
     y: int
     trajectory_sub_id: int
