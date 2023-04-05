@@ -1,6 +1,7 @@
 """Cell endpoint controller for the DIPAAL api."""
 import os
 import pandas as pd
+import numpy as np
 
 from app.dependencies import get_dw
 from app.routers.v1.cell.models.cell_fact import FactCell
@@ -24,8 +25,8 @@ def cell_facts(
         y_max: int = Query(example='3485000'),
         cell_size: SpatialResolution = Query(default=SpatialResolution.five_kilometers),
         srid: int = Query(default=3034),
-        upper_timestamp: datetime = Query(default=None, example='2022-01-01T00:00:00Z'),
-        lower_timestamp: datetime = Query(default=None, example='2022-01-01T00:00:00Z'),
+        upper_timestamp: datetime = Query(default=datetime.max, example='2022-01-01T00:00:00Z'),
+        lower_timestamp: datetime = Query(default=datetime.min, example='2022-01-01T00:00:00Z'),
         stopped: List[bool] = Query(default=[True, False]),
         limit: int = Query(default=1000, ge=0),
         offset: int = Query(default=0, ge=0),
@@ -40,13 +41,13 @@ def cell_facts(
         'xmax': x_max,
         'ymax': y_max,
         'srid': srid,
-        'stopped': [True, False] if stopped is None else [stopped],
-        'upper_timestamp': datetime.max if upper_timestamp is None else upper_timestamp,
-        'lower_timestamp': datetime.min if lower_timestamp is None else lower_timestamp,
+        'stopped': stopped,
+        'upper_timestamp': upper_timestamp,
+        'lower_timestamp': lower_timestamp,
         'limit': limit,
         'offset': offset
     }
-    df = pd.read_sql(text(query), dw.bind.connect(), params=parameters).fillna("null")
+    df = pd.read_sql(text(query), dw.bind.connect(), params=parameters).replace(np.nan, None)
 
     dicts = [cell_fact_to_dict(row) for _, row in df.iterrows()]
     return JSONResponse(dicts)
