@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from pydash.objects import merge
 
-# from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
+from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
 from app.routers.v1.heatmap.schemas.enc_enum import EncCell
 from app.routers.v1.heatmap.schemas.heatmap_type import HeatmapType
 from app.routers.v1.heatmap.schemas.mobile_type import MobileType

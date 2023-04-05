@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-import pytest
 from fastapi.testclient import TestClient
 from app.api_main import app
 from app.dependencies import get_dw
