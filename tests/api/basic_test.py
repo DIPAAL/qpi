@@ -4,7 +4,7 @@ from app.api_main import app
 from app.dependencies import get_dw
 
 
-def heartbeat_pass():
+def test_heartbeat_pass():
     cursor_mock = MagicMock()
     cursor_mock.fetchone.return_value = (1,)
 
