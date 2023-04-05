@@ -9,6 +9,7 @@ from rasterio.plot import show
 import matplotlib.pyplot as plt
 from PIL import Image
 
+
 satellite = rio.open("qpi/run/references/danish_waters_3034.tiff")
 dipaal_logo = Image.open("qpi/run/references/dipaal.png")
 daisy_logo = Image.open("qpi/run/references/daisy.png")
