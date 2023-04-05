@@ -1,0 +1,1 @@
+st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), st_transform(dt.trajectory::geometry, 3034))

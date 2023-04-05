@@ -109,20 +109,16 @@ def get_connection():
 
 
 def get_file_path(path_from_root):
+    """Get the path to a file from the root directory."""
     return os.path.join(ROOT_DIR, f'{path_from_root}')
 
+
 def get_file_contents(path_from_root):
+    """Get the contents of a file from the root directory."""
     with open(get_file_path(path_from_root), 'r') as f:
         return f.read()
 
+
 def get_file_contents_as_text(path_from_root):
+    """Get the contents of a file from the root directory as a sqlalchemy text object."""
     return text(get_file_contents(path_from_root))
-
-def run_sql_file(path_from_root, dw):
-    return dw.execute(get_file_contents_as_text(path_from_root))
-
-def run_sql_file_with_params(path_from_root, dw, params):
-    return dw.execute(get_file_contents_as_text(path_from_root), params)
-
-def brackets_and_content_to_string(query, bracket_content, new_string):
-    return query.format(**{bracket_content: new_string})
