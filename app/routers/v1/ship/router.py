@@ -8,27 +8,13 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from app.querybuilder import get_sql_operator, QueryBuilder
 from app.routers.v1.ship import schemas
+from helper_functions import response
 import datetime
-import pandas as pd
-from sqlalchemy import text
 import os
 
 router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
-
-
-def response(query: str, dw: Session, params: dict):
-    """
-    Return a response from a query.
-
-    Args:
-        query (str): The query to execute.
-        dw (Session): The data warehouse session.
-        params (dict): The parameters to pass to the query.
-    """
-    df = pd.read_sql(text(query), dw.bind.connect(), params=params)
-    return df.to_dict(orient="records")
 
 
 @router.get("/")
@@ -289,7 +275,9 @@ async def mmsi(
 ):
     """
     Get information about a ship by MMSI.
+
     Although MMSI is supposed to be a unique identifier, there are some cases where ships share the same MMSI.
+    In such cases a set of ships is returned.
     """
     QB = QueryBuilder()
     QB.add_sql("ship_by_mmsi.sql")

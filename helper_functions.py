@@ -4,9 +4,11 @@ import os
 from datetime import datetime, timedelta
 from typing import Tuple, Callable, TypeVar
 from time import perf_counter
-import psycopg2
 from constants import ROOT_DIR
+import psycopg2
+import pandas as pd
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
@@ -122,3 +124,16 @@ def get_file_contents(path_from_root):
 def get_file_contents_as_text(path_from_root):
     """Get the contents of a file from the root directory as a sqlalchemy text object."""
     return text(get_file_contents(path_from_root))
+
+
+def response(query: str, dw: Session, params: dict):
+    """
+    Return a response from a query.
+
+    Args:
+        query (str): The query to execute.
+        dw (Session): The data warehouse session.
+        params (dict): The parameters to pass to the query.
+    """
+    df = pd.read_sql(text(query), dw.bind.connect(), params=params)
+    return df.to_dict(orient="records")
