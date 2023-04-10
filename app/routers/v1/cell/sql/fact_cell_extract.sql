@@ -26,8 +26,8 @@ INNER JOIN dim_ship_type dst ON ds.ship_type_id = dst.ship_type_id
 INNER JOIN dim_nav_status dns ON fc.nav_status_id = dns.nav_status_id
 WHERE ST_Intersects(dc.geom, ST_Transform(st_makeenvelope(:xmin, :ymin, :xmax, :ymax, :srid), 3034))
   AND fc.infer_stopped = ANY(:stopped)
-  AND timestamp_from_date_time_id(fc.entry_date_id, fc.entry_time_id) < :upper_timestamp
-  AND timestamp_from_date_time_id(fc.entry_date_id, fc.entry_time_id) > :lower_timestamp
+  AND timestamp_from_date_time_id(fc.entry_date_id, fc.entry_time_id) <= :end_timestamp
+  AND timestamp_from_date_time_id(fc.entry_date_id, fc.entry_time_id) >= :start_timestamp
 LIMIT :limit
 OFFSET :offset
 ;
