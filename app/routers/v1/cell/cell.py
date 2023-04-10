@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 
 from app.dependencies import get_dw
-from app.routers.v1.cell.schemas.cell_fact import FactCell
-from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
+from app.schemas.cell_fact import FactCell
+from app.schemas.spatial_resolution import SpatialResolution
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse

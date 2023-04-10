@@ -12,12 +12,12 @@ from app.dependencies import get_dw
 from pydash.objects import merge
 
 from app.routers.v1.heatmap.heatmap_renders import geo_tiff_to_png
-from app.routers.v1.heatmap.models.heatmap_type import HeatmapType
-from app.routers.v1.heatmap.models.mobile_type import MobileType
-from app.routers.v1.heatmap.models.ship_type import ShipType
-from app.routers.v1.heatmap.models.single_output_formats import SingleOutputFormat
-from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
-from app.routers.v1.heatmap.models.temporal_resolution import TemporalResolution
+from app.schemas.heatmap_type import HeatmapType
+from app.schemas.mobile_type import MobileType
+from app.schemas.ship_type import ShipType
+from app.schemas.single_output_formats import SingleOutputFormat
+from app.schemas.spatial_resolution import SpatialResolution
+from app.schemas.temporal_resolution import TemporalResolution
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))

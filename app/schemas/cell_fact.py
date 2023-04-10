@@ -2,8 +2,8 @@
 
 from datetime import datetime
 from pydantic import BaseModel, Field
-from app.routers.v1.cell.schemas.direction import Direction
-from app.routers.v1.cell.schemas.ship import Ship
+from app.schemas.direction import Direction
+from app.schemas.ship import Ship
 
 
 class FactCell(BaseModel):
