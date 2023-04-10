@@ -7,8 +7,10 @@ from fastapi import APIRouter, Depends, Path, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from app.querybuilder import get_sql_operator, QueryBuilder
-from app.routers.v1.ship import schemas
 from helper_functions import response
+from app.schemas.search_method_spatial import SearchMethodSpatial
+from app.schemas.mobile_type import MobileType
+from app.schemas.ship_type import ShipType
 import datetime
 import os
 
@@ -79,15 +81,15 @@ async def ships(  # noqa: C901
         flag_state_nin: list[str] | None = Query(default=None),
 
         # Filters for ship type
-        mobile_type_in: list[str] | None = Query(default=None),
-        mobile_type_nin: list[str] | None = Query(default=None),
-        ship_type_in: list[str] | None = Query(default=None),
-        ship_type_nin: list[str] | None = Query(default=None),
+        mobile_type_in: list[MobileType] | None = Query(default=None),
+        mobile_type_nin: list[MobileType] | None = Query(default=None),
+        ship_type_in: list[ShipType] | None = Query(default=None),
+        ship_type_nin: list[ShipType] | None = Query(default=None),
         # Temporal bounds
         from_datetime: datetime.datetime = Query(default=None),
         to_datetime: datetime.datetime = Query(default=None),
         # Spatial bounds
-        search_method: schemas.SearchMethodSpatial = Query(default="cell_1000m"),
+        search_method: SearchMethodSpatial = Query(default="cell_1000m"),
         min_x: int = Query(default=None),
         min_y: int = Query(default=None),
         max_x: int = Query(default=None),
@@ -240,10 +242,17 @@ async def ships(  # noqa: C901
 
     }
 
+    def get_values_from_enum_list(enum_list, enum_type):
+        """Returns a list of values from an enum list"""
+        if enum_list:
+            return [enum_type(value).value for value in enum_list]
+
     # All parameters for ship type filters
     filter_params_ship_type = {
-        "mobile_type_in": mobile_type_in, "mobile_type_nin": mobile_type_nin,
-        "ship_type_in": ship_type_in, "ship_type_nin": ship_type_nin
+        "mobile_type_in": get_values_from_enum_list(mobile_type_in, MobileType),
+        "mobile_type_nin": get_values_from_enum_list(mobile_type_nin, MobileType),
+        "ship_type_in": get_values_from_enum_list(ship_type_in, ShipType),
+        "ship_type_nin": get_values_from_enum_list(ship_type_nin, ShipType)
     }
 
     # If there are ship filters, add the appropriate where statement(s) to query
@@ -256,7 +265,7 @@ async def ships(  # noqa: C901
     # If there are ship type filters, add the appropriate where statement(s) to query
     for key, value in filter_params_ship_type.items():
         if value:
-            param_name = key.split("_")[0]
+            param_name = key.rsplit("_", 1)[0]
             operator = get_sql_operator(key)
             QB.add_where("dst." + param_name, operator, value)
 
