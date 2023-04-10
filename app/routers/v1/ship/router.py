@@ -141,7 +141,7 @@ async def ships(  # noqa: C901
         dict: Dictionary with information about a specific ship or a set of ships.
     """  # noqa: D412
     # Query builder instantiated and ship select statement added to query
-    QB = QueryBuilder(SQL_PATH)
+    qb = QueryBuilder(SQL_PATH)
 
     # Parameters to be added to final query.
     params = {
@@ -151,13 +151,13 @@ async def ships(  # noqa: C901
 
     # If ship_id is provided, only one ship can be found, done by a simple query.
     if ship_id:
-        QB.add_sql("select_ship.sql", new_line=False)
-        QB.add_sql("ship_by_id.sql")
-        return response(QB.get_query_str(), dw, {"id": ship_id})
+        qb.add_sql("select_ship.sql", new_line=False)
+        qb.add_sql("ship_by_id.sql")
+        return response(qb.get_query_str(), dw, {"id": ship_id})
 
     # If ship_id is not provided, a more complex query is needed.
     # First, the select statement is added to the query, which is the same for all queries.
-    QB.add_sql("select_ship.sql", new_line=False)
+    qb.add_sql("select_ship.sql", new_line=False)
 
     # Filters for temporal/spatial bounds are assumed to be false until proven otherwise.
     temporal_bounds = False
@@ -189,34 +189,34 @@ async def ships(  # noqa: C901
     # From statement added to query, depending on search method (cell or trajectory and temporal/spatial bounds)
     # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
     if temporal_bounds is False and spatial_bounds is False:
-        QB.add_sql("from_ship.sql")
+        qb.add_sql("from_ship.sql")
 
     elif search_method.value == "trajectories":
-        QB.add_sql("from_trajectory.sql")
+        qb.add_sql("from_trajectory.sql")
         if temporal_bounds or spatial_bounds:
-            QB.add_string("WHERE")
+            qb.add_string("WHERE")
         if temporal_bounds and spatial_bounds:
-            QB.add_sql("trajectory_temporal.sql")
-            QB.add_string(" AND", new_line=False)
-            QB.add_sql("trajectory_spatial.sql")
+            qb.add_sql("trajectory_temporal.sql")
+            qb.add_string(" AND", new_line=False)
+            qb.add_sql("trajectory_spatial.sql")
         elif temporal_bounds:
-            QB.add_sql("trajectory_temporal.sql")
+            qb.add_sql("trajectory_temporal.sql")
         elif spatial_bounds:
-            QB.add_sql("trajectory_spatial.sql")
+            qb.add_sql("trajectory_spatial.sql")
 
     elif "cell" in search_method.value:
         replace = {"{CELL_SIZE}": search_method.value}
-        QB.add_sql_with_replace("from_cell.sql", replace)
+        qb.add_sql_with_replace("from_cell.sql", replace)
         if temporal_bounds or spatial_bounds:
-            QB.add_string("WHERE")
+            qb.add_string("WHERE")
         if temporal_bounds and spatial_bounds:
-            QB.add_sql("cell_temporal.sql")
-            QB.add_string(" AND", new_line=False)
-            QB.add_sql("cell_spatial.sql")
+            qb.add_sql("cell_temporal.sql")
+            qb.add_string(" AND", new_line=False)
+            qb.add_sql("cell_spatial.sql")
         elif temporal_bounds:
-            QB.add_sql("cell_temporal.sql")
+            qb.add_sql("cell_temporal.sql")
         elif spatial_bounds:
-            QB.add_sql("cell_spatial.sql")
+            qb.add_sql("cell_spatial.sql")
 
     # All parameters for the ship filters
     filter_params_ship = {
@@ -260,19 +260,19 @@ async def ships(  # noqa: C901
         if value:
             param_name = key.rsplit("_", 1)[0]
             operator = get_sql_operator(key)
-            QB.add_where("ds." + param_name, operator, value)
+            qb.add_where("ds." + param_name, operator, value)
 
     # If there are ship type filters, add the appropriate where statement(s) to query
     for key, value in filter_params_ship_type.items():
         if value:
             param_name = key.rsplit("_", 1)[0]
             operator = get_sql_operator(key)
-            QB.add_where("dst." + param_name, operator, value)
+            qb.add_where("dst." + param_name, operator, value)
 
     # Group by statement added to query, also introducing the order by, offset and limit statements
-    QB.add_sql("group_by_ship.sql")
+    qb.add_sql("group_by_ship.sql")
 
-    final_query = QB.get_query_str()
+    final_query = qb.get_query_str()
     print(final_query)
     return response(final_query, dw, params)
 
@@ -288,6 +288,6 @@ async def mmsi(
     Although MMSI is supposed to be a unique identifier, there are some cases where ships share the same MMSI.
     In such cases a set of ships is returned.
     """
-    QB = QueryBuilder()
-    QB.add_sql("ship_by_mmsi.sql")
-    return response(QB.get_query_str(), dw, {"mmsi": mmsi})
+    qb = QueryBuilder()
+    qb.add_sql("ship_by_mmsi.sql")
+    return response(qb.get_query_str(), dw, {"mmsi": mmsi})
