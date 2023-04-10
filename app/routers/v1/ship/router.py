@@ -149,14 +149,14 @@ async def ships(  # noqa: C901
         "limit": limit
     }
 
+    # First, the select statement is added to the query, which is the same for all queries.
+    # This part of the query also determines what the output for the client will be.
+    qb.add_sql("select_ship.sql", new_line=False)
+
     # If ship_id is provided, only one ship can be found, done by a simple query.
     if ship_id:
-        qb.add_sql("select_ship.sql", new_line=False).add_sql("ship_by_id.sql")
+        qb.add_sql("ship_by_id.sql")
         return response(qb.get_query_str(), dw, {"id": ship_id})
-
-    # If ship_id is not provided, a more complex query is needed.
-    # First, the select statement is added to the query, which is the same for all queries.
-    qb.add_sql("select_ship.sql", new_line=False)
 
     # Filters for temporal/spatial bounds are assumed to be false until proven otherwise.
     temporal_bounds = False
@@ -236,7 +236,6 @@ async def ships(  # noqa: C901
         "flag_state_in": flag_state_in, "flag_state_nin": flag_state_nin
 
     }
-
 
     # All parameters for ship type filters
     filter_params_ship_type = {
