@@ -151,8 +151,7 @@ async def ships(  # noqa: C901
 
     # If ship_id is provided, only one ship can be found, done by a simple query.
     if ship_id:
-        qb.add_sql("select_ship.sql", new_line=False)
-        qb.add_sql("ship_by_id.sql")
+        qb.add_sql("select_ship.sql", new_line=False).add_sql("ship_by_id.sql")
         return response(qb.get_query_str(), dw, {"id": ship_id})
 
     # If ship_id is not provided, a more complex query is needed.
@@ -196,9 +195,7 @@ async def ships(  # noqa: C901
         if temporal_bounds or spatial_bounds:
             qb.add_string("WHERE")
         if temporal_bounds and spatial_bounds:
-            qb.add_sql("trajectory_temporal.sql")
-            qb.add_string(" AND", new_line=False)
-            qb.add_sql("trajectory_spatial.sql")
+            qb.add_sql("trajectory_temporal.sql").add_string(" AND", new_line=False).add_sql("trajectory_spatial.sql")
         elif temporal_bounds:
             qb.add_sql("trajectory_temporal.sql")
         elif spatial_bounds:
@@ -210,9 +207,7 @@ async def ships(  # noqa: C901
         if temporal_bounds or spatial_bounds:
             qb.add_string("WHERE")
         if temporal_bounds and spatial_bounds:
-            qb.add_sql("cell_temporal.sql")
-            qb.add_string(" AND", new_line=False)
-            qb.add_sql("cell_spatial.sql")
+            qb.add_sql("cell_temporal.sql").add_string(" AND", new_line=False).add_sql("cell_spatial.sql")
         elif temporal_bounds:
             qb.add_sql("cell_temporal.sql")
         elif spatial_bounds:
@@ -242,10 +237,6 @@ async def ships(  # noqa: C901
 
     }
 
-    def get_values_from_enum_list(enum_list, enum_type):
-        """Return a list of values from an enum list."""
-        if enum_list:
-            return [enum_type(value).value for value in enum_list]
 
     # All parameters for ship type filters
     filter_params_ship_type = {
@@ -275,6 +266,12 @@ async def ships(  # noqa: C901
     final_query = qb.get_query_str()
     print(final_query)
     return response(final_query, dw, params)
+
+
+def get_values_from_enum_list(enum_list, enum_type):
+    """Return a list of values from an enum list."""
+    if enum_list:
+        return [enum_type(value).value for value in enum_list]
 
 
 @router.get("/{mmsi}")

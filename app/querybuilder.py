@@ -27,9 +27,12 @@ class QueryBuilder:
         """
         if not sql_file.endswith(".sql"):
             raise ValueError("File must be a .sql file")
+
         if new_line:
             self.query += "\n"
+
         self.query += get_file_contents(os.path.join(self.sql_path, sql_file))
+        return self
 
     def add_string(self, string, new_line=True):
         """
@@ -41,7 +44,9 @@ class QueryBuilder:
         """
         if new_line:
             self.query += "\n"
+
         self.query += string
+        return self
 
     def add_sql_with_replace(self, sql_file, replace: dict, new_line=True):
         """
@@ -60,6 +65,7 @@ class QueryBuilder:
             file = file.replace(key, value)
 
         self.query += file
+        return self
 
     def add_where(self, param, operator, value, new_line=True):
         """
@@ -80,6 +86,7 @@ class QueryBuilder:
             self.query += f"AND {param} {operator} {value}"
         else:
             self.query += f"WHERE {param} {operator} {value}"
+        return self
 
     def _convert_value(self, value):
         """Convert a value to a format that can be used in a query."""
@@ -102,6 +109,7 @@ class QueryBuilder:
     def remove_query(self):
         """Remove all content from the query string."""
         self.query = ""
+        return self
 
     def get_query_text(self):
         """
