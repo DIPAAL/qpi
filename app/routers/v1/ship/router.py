@@ -18,7 +18,6 @@ router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
-
 @router.get("/")
 async def ships(  # noqa: C901
         # Pagination
@@ -164,33 +163,35 @@ async def ships(  # noqa: C901
 
     spatial_params = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
 
-    if None not in spatial_params.values():
+    if any(spatial_params.values()):
         spatial_bounds = True
         if None in spatial_params.values():
             raise HTTPException(status_code=400, detail="Spatial bounds not complete")
         params.update(spatial_params)
 
+    # FIXME When using trajectories, it requires a start_date and end_date, which is not the case for cells.
+    #  Add a check for this.
     temporal_params = {"from_date": from_datetime,
                        "from_time": from_datetime,
                        "to_date": to_datetime,
                        "to_time": to_datetime}
 
-    if None not in temporal_params.values():
+    if any(temporal_params.values()):
         # Format datetime objects to integers, depending on the type of temporal parameter.
+        temporal_bounds = True
         for key, value in temporal_params.items():
             if key[-4:] == "date":
                 temporal_params[key] = int(value.strftime("%Y%m%d"))
             elif key[-4:] == "time":
                 temporal_params[key] = int(value.strftime("%H%M%S"))
-        temporal_bounds = True
         params.update(temporal_params)
 
     # From statement added to query, depending on search method (cell or trajectory and temporal/spatial bounds)
     # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
-    if temporal_bounds is False and spatial_bounds is False:
+    if not temporal_bounds and not spatial_bounds:
         qb.add_sql("from_ship.sql")
 
-    elif search_method.value == "trajectories":
+    elif search_method == SearchMethodSpatial.trajectories:
         qb.add_sql("from_trajectory.sql")
         if temporal_bounds or spatial_bounds:
             qb.add_string("WHERE")
@@ -212,6 +213,8 @@ async def ships(  # noqa: C901
             qb.add_sql("cell_temporal.sql")
         elif spatial_bounds:
             qb.add_sql("cell_spatial.sql")
+    else:
+        raise HTTPException(status_code=400, detail="Search method not supported")
 
     # All parameters for the ship filters
     filter_params_ship = {
