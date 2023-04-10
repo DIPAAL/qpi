@@ -2,12 +2,13 @@
 from sqlalchemy import text
 from helper_functions import get_file_contents
 import os
+from typing import Any
 
 
 class QueryBuilder:
     """A class to build a query from a set of sql files and/or strings."""
 
-    def __init__(self, sql_path):
+    def __init__(self, sql_path: os.path):
         """
         Initialise the query builder.
 
@@ -17,7 +18,7 @@ class QueryBuilder:
         self.sql_path = sql_path
         self.query = ""
 
-    def add_sql(self, sql_file, new_line=True):
+    def add_sql(self, sql_file: str, new_line=True):
         """
         Add the contents of a sql file to the query.
 
@@ -34,7 +35,7 @@ class QueryBuilder:
         self.query += get_file_contents(os.path.join(self.sql_path, sql_file))
         return self
 
-    def add_string(self, string, new_line=True):
+    def add_string(self, string: str, new_line=True):
         """
         Add a string to the query.
 
@@ -48,7 +49,7 @@ class QueryBuilder:
         self.query += string
         return self
 
-    def add_sql_with_replace(self, sql_file, replace: dict, new_line=True):
+    def add_sql_with_replace(self, sql_file: str, replace: dict, new_line=True):
         """
         Add the contents of a sql file to the query, replacing the keys in the replace dict with the values.
 
@@ -67,7 +68,7 @@ class QueryBuilder:
         self.query += file
         return self
 
-    def add_where(self, param, operator, value, new_line=True):
+    def add_where(self, param: str, operator: str, value: Any, new_line=True):
         """
         Add a where clause to the query.
 
@@ -88,7 +89,7 @@ class QueryBuilder:
             self.query += f"WHERE {param} {operator} {value}"
         return self
 
-    def _convert_value(self, value):
+    def _convert_value(self, value: Any):
         """Convert a value to a format that can be used in a query."""
         if isinstance(value, list):
             # This is to prevent the query from breaking if the list only contains one value
@@ -127,7 +128,7 @@ class QueryBuilder:
         """
         return self.query
 
-    def write_query_to_file(self, file_path, file_name):
+    def write_query_to_file(self, file_path: os.path, file_name: str):
         """
         Write the query to a file.
 
