@@ -266,7 +266,6 @@ async def ships(  # noqa: C901
     qb.add_sql("group_by_ship.sql")
 
     final_query = qb.get_query_str()
-    print(final_query)
     return response(final_query, dw, params)
 
 
