@@ -12,22 +12,22 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from typing import List, Dict
+from typing import List
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 
 
-@router.get('', response_model = List[FactCell])
+@router.get('', response_model=List[FactCell])
 def cell_facts(
-        x_min: int = Query(example='3600000', description='Defines the "left side" of the bounding rectangle, coordinates must match the provided "srid"'),
-        y_min: int = Query(example='3030000', description='Defines the "bottom side" of the bounding rectangle, coordinates must match the provided "srid"'),
-        x_max: int = Query(example='4395000', description='Defines the "right side" of the bounding rectangle, coordinates must match the provided "srid"'),
-        y_max: int = Query(example='3485000', description='Defines the "top side" of the bounding rectangle, coordinates must match the provided "srid"'),
-        cell_size: SpatialResolution = Query(default=SpatialResolution.five_kilometers, description='Defines the spatial resolution of the resulting cell facts'),
+        x_min: int = Query(example='3600000', description='Defines the "left side" of the bounding rectangle, coordinates must match the provided "srid"'),  # noqa: E501
+        y_min: int = Query(example='3030000', description='Defines the "bottom side" of the bounding rectangle, coordinates must match the provided "srid"'),  # noqa: E501
+        x_max: int = Query(example='4395000', description='Defines the "right side" of the bounding rectangle, coordinates must match the provided "srid"'),  # noqa: E501
+        y_max: int = Query(example='3485000', description='Defines the "top side" of the bounding rectangle, coordinates must match the provided "srid"'),  # noqa: E501
+        cell_size: SpatialResolution = Query(default=SpatialResolution.five_kilometers, description='Defines the spatial resolution of the resulting cell facts'),  # noqa: E501
         srid: int = Query(default=3034, description='The srid projection used for the defined bounding rectangle'),
-        end_timestamp: datetime = Query(default=datetime.max, example='2022-01-01T00:00:00Z', description='The inclusive timestamp that defines the end temporal bound of the result'),
-        start_timestamp: datetime = Query(default=datetime.min, example='2022-01-01T00:00:00Z', description='The inclusive timestamp that defines the start temporal bound of the result'),
+        end_timestamp: datetime = Query(default=datetime.max, example='2022-01-01T00:00:00Z', description='The inclusive timestamp that defines the end temporal bound of the result'),  # noqa: E501
+        start_timestamp: datetime = Query(default=datetime.min, example='2022-01-01T00:00:00Z', description='The inclusive timestamp that defines the start temporal bound of the result'),  # noqa: E501
         stopped: List[bool] = Query(default=[True, False], description='Looking at stopped and/or moving ships'),
         limit: int = Query(default=1000, ge=0, description='How many results returned (pagination)'),
         offset: int = Query(default=0, ge=0, description='The result offset (pagination)'),
