@@ -62,8 +62,7 @@ class QueryBuilder:
             self.query += "\n"
         file = get_file_contents(os.path.join(self.sql_path, sql_file))
 
-        for key, value in replace.items():
-            file = file.replace(key, value)
+        file = file.format(**replace)
 
         self.query += file
         return self
@@ -89,7 +88,8 @@ class QueryBuilder:
             self.query += f"WHERE {param} {operator} {value}"
         return self
 
-    def _convert_value(self, value: Any):
+    @staticmethod
+    def _convert_value(value: Any):
         """Convert a value to a format that can be used in a query."""
         if isinstance(value, list):
             # This is to prevent the query from breaking if the list only contains one value
@@ -106,11 +106,6 @@ class QueryBuilder:
     def end_query(self):
         """Add a semicolon to the end of the query."""
         self.query += ";"  # Add semicolon to end of query
-
-    def remove_query(self):
-        """Remove all content from the query string."""
-        self.query = ""
-        return self
 
     def get_query_text(self):
         """
@@ -136,7 +131,7 @@ class QueryBuilder:
             file_path: The path to the file
             file_name: The name of the file
         """
-        with open(os.path.join(file_path, file_name), "w") as file:
+        with open(os.path.join(file_path, file_name + ".sql"), "w") as file:
             file.write(self.query)
 
 
@@ -149,14 +144,10 @@ def get_sql_operator(param_name):
     Returns:
         The sql operator as a string
     """
-    operators_l3 = {"_in": "IN", "_gt": ">", "_lt": "<"}
-    operators_l4 = {"_nin": "NOT IN", "_gte": ">=", "_lte": "<="}
 
-    for key, value in operators_l3.items():
-        if key in param_name[-3:]:
-            return value
-    for key, value in operators_l4.items():
-        if key in param_name[-4:]:
-            return value
-
-    raise ValueError("Invalid type of parameter")
+    operators = {"_in": "IN", "_gt": ">", "_lt": "<", "_nin": "NOT IN", "_gte": ">=", "_lte": "<="}
+    key_start_idx = param_name.rfind('_')
+    try:
+        return operators[param_name[key_start_idx:]]
+    except KeyError:
+        raise ValueError("Invalid type of parameter")

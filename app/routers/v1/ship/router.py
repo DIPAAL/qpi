@@ -203,7 +203,7 @@ async def ships(  # noqa: C901
             qb.add_sql("trajectory_spatial.sql")
 
     elif "cell" in search_method.value:
-        replace = {"{CELL_SIZE}": search_method.value}
+        replace = {"CELL_SIZE": search_method.value}
         qb.add_sql_with_replace("from_cell.sql", replace)
         if temporal_bounds or spatial_bounds:
             qb.add_string("WHERE")
