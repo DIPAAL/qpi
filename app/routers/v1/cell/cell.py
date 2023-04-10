@@ -4,11 +4,12 @@ import pandas as pd
 import numpy as np
 
 from app.dependencies import get_dw
-from app.routers.v1.cell.models.cell_fact import FactCell
+from app.routers.v1.cell.schemas.cell_fact import FactCell
 from app.routers.v1.heatmap.models.spatial_resolution import SpatialResolution
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Dict
@@ -17,20 +18,20 @@ router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 
 
-@router.get('')
+@router.get('', response_model = List[FactCell])
 def cell_facts(
-        x_min: int = Query(example='3600000'),
-        y_min: int = Query(example='3030000'),
-        x_max: int = Query(example='4395000'),
-        y_max: int = Query(example='3485000'),
-        cell_size: SpatialResolution = Query(default=SpatialResolution.five_kilometers),
-        srid: int = Query(default=3034),
-        upper_timestamp: datetime = Query(default=datetime.max, example='2022-01-01T00:00:00Z'),
-        lower_timestamp: datetime = Query(default=datetime.min, example='2022-01-01T00:00:00Z'),
-        stopped: List[bool] = Query(default=[True, False]),
-        limit: int = Query(default=1000, ge=0),
-        offset: int = Query(default=0, ge=0),
-        dw: Session = Depends(get_dw)) -> List[FactCell]:
+        x_min: int = Query(example='3600000', description='Defines the "left side" of the bounding rectangle, coordinates must match the provided "srid"'),
+        y_min: int = Query(example='3030000', description='Defines the "bottom side" of the bounding rectangle, coordinates must match the provided "srid"'),
+        x_max: int = Query(example='4395000', description='Defines the "right side" of the bounding rectangle, coordinates must match the provided "srid"'),
+        y_max: int = Query(example='3485000', description='Defines the "top side" of the bounding rectangle, coordinates must match the provided "srid"'),
+        cell_size: SpatialResolution = Query(default=SpatialResolution.five_kilometers, description='Defines the spatial resolution of the resulting cell facts'),
+        srid: int = Query(default=3034, description='The srid projection used for the defined bounding rectangle'),
+        end_timestamp: datetime = Query(default=datetime.max, example='2022-01-01T00:00:00Z', description='The inclusive timestamp that defines the end temporal bound of the result'),
+        start_timestamp: datetime = Query(default=datetime.min, example='2022-01-01T00:00:00Z', description='The inclusive timestamp that defines the start temporal bound of the result'),
+        stopped: List[bool] = Query(default=[True, False], description='Looking at stopped and/or moving ships'),
+        limit: int = Query(default=1000, ge=0, description='How many results returned (pagination)'),
+        offset: int = Query(default=0, ge=0, description='The result offset (pagination)'),
+        dw: Session = Depends(get_dw)):
     """Return cell facts."""
     with open(os.path.join(current_file_path, 'sql/fact_cell_extract.sql')) as file:
         query = file.read().format(CELL_SIZE=int(cell_size))
@@ -42,28 +43,28 @@ def cell_facts(
         'ymax': y_max,
         'srid': srid,
         'stopped': stopped,
-        'upper_timestamp': upper_timestamp,
-        'lower_timestamp': lower_timestamp,
+        'end_timestamp': end_timestamp,
+        'start_timestamp': start_timestamp,
         'limit': limit,
         'offset': offset
     }
     df = pd.read_sql(text(query), dw.bind.connect(), params=parameters).replace(np.nan, None)
 
     dicts = [cell_fact_to_dict(row) for _, row in df.iterrows()]
-    return JSONResponse(dicts)
+    return JSONResponse(content=jsonable_encoder(dicts))
 
 
 TIMESTAMP_FORMAT: str = '%Y-%m-%dT%H:%M:%SZ'
 
 
-def cell_fact_to_dict(db_row: pd.Series) -> Dict:
+def cell_fact_to_dict(db_row: pd.Series) -> FactCell:
     """
     Convert from pandas series representation to return type as a dictionary.
 
     Keyword Arguments:
         db_row: Pandas series containing a single cell fact
     """
-    return {
+    return FactCell.parse_obj({
         'x': db_row['x'],
         'y': db_row['y'],
         'trajectory_sub_id': db_row['trajectory_sub_id'],
@@ -87,4 +88,4 @@ def cell_fact_to_dict(db_row: pd.Series) -> Dict:
             'mobile': db_row['mobile_type'],
             'flag_state': db_row['flag_state']
         }
-    }
+    })
