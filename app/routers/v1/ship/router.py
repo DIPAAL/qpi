@@ -243,7 +243,7 @@ async def ships(  # noqa: C901
     }
 
     def get_values_from_enum_list(enum_list, enum_type):
-        """Returns a list of values from an enum list"""
+        """Return a list of values from an enum list."""
         if enum_list:
             return [enum_type(value).value for value in enum_list]
 

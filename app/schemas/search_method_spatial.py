@@ -1,6 +1,7 @@
 """Schema for spatial search methods."""
 from enum import Enum
 
+
 class SearchMethodSpatial(str, Enum):
     """Enum for all search methods."""
 
