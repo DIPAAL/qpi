@@ -284,16 +284,12 @@ async def ships(  # noqa: C901
 
 @router.get("/{mmsi}")
 async def mmsi(
-        mmsi: int = Path(..., le=999_999_999),
+        mmsi: int = Path(..., le=999_999_999, description="The mmsi number of a ship"),
         dw: Session = Depends(get_dw)
 ):
-    """Get information about a ship by MMSI.
-
-    Args:
-        mmsi: The MMSI of the ship
-        dw: A session to the data warehouse
-
-    Returns: A list containing information about the ship
+    """
+    Get information about a ship by MMSI.
+    Although MMSI is supposed to be a unique identifier, there are some cases where ships share the same MMSI.
     """
     QB = QueryBuilder()
     QB.add_sql("ship_by_mmsi.sql")
