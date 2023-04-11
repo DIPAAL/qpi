@@ -110,13 +110,21 @@ def get_connection():
     )
 
 
-def get_file_path(path_from_root):
-    """Get the path to a file from the root directory."""
+def get_file_path(path_from_root: str):
+    """Get the path to a file from the root directory.
+
+    Args:
+        path_from_root (str): The path to the file from the root directory.
+    """
     return os.path.join(ROOT_DIR, f'{path_from_root}')
 
 
-def get_file_contents(path_from_root):
-    """Get the contents of a file from the root directory."""
+def get_file_contents(path_from_root: str):
+    """Get the contents of a file from the root directory.
+
+    Args:
+        path_from_root (str): The path to the file from the root directory.
+    """
     with open(get_file_path(path_from_root), 'r') as f:
         return f.read()
 

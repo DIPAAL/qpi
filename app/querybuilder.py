@@ -8,12 +8,12 @@ from typing import Any
 class QueryBuilder:
     """A class to build a query from a set of sql files and/or strings."""
 
-    def __init__(self, sql_path: os.path):
+    def __init__(self, sql_path: str):
         """
         Initialise the query builder.
 
         Args:
-            sql_path: The path to the folder containing the sql file
+            sql_path (str): The path to the directory containing the sql files
         """
         self.sql_path = sql_path
         self.query = ""
@@ -23,8 +23,8 @@ class QueryBuilder:
         Add the contents of a sql file to the query.
 
         Args:
-            sql_file: The name of the sql file to add to the query
-            new_line: Whether to add a new line before the sql file's content is added to the query
+            sql_file (str): The name of the sql file to add to the query
+            new_line (bool): Whether to add a new line before the sql file's content is added to the query
         """
         if not sql_file.endswith(".sql"):
             raise ValueError("File must be a .sql file")
@@ -40,8 +40,8 @@ class QueryBuilder:
         Add a string to the query.
 
         Args:
-            string: The string to add to the query
-            new_line: Whether to add a new line before the string is added to the query
+            string (str): The string to add to the query
+            new_line (bool): Whether to add a new line before the string is added to the query
         """
         if new_line:
             self.query += "\n"
@@ -54,9 +54,10 @@ class QueryBuilder:
         Add the contents of a sql file to the query, replacing the keys in the replace dict with the values.
 
         Args:
-            sql_file: The name of the sql file to add to the query
-            replace: A dict with keys to replace in the sql file and the values to replace them with
-            new_line: Whether to add a new line before the sql file's content is added to the query
+            sql_file (str): The name of the sql file to add to the query
+            replace (dict): A dict with keys representing the strings to replace and
+                values representing the strings to replace them with
+            new_line (bool): Whether to add a new line before the sql file's content is added to the query
         """
         if new_line:
             self.query += "\n"
@@ -72,10 +73,10 @@ class QueryBuilder:
         Add a where clause to the query.
 
         Args:
-            param: What parameter to filter on
-            operator: What operator to use in the where clause.
-            value: What value to filter on
-            new_line: Whether to add a new line before the where clause is added to the query
+            param (str): What parameter to filter on
+            operator (str): What operator to use in the where clause.
+            value (Any): What value to filter on
+            new_line (bool): Whether to add a new line before the where clause is added to the query
         """
         if new_line:
             self.query += "\n"
@@ -123,23 +124,23 @@ class QueryBuilder:
         """
         return self.query
 
-    def write_query_to_file(self, file_path: os.path, file_name: str):
+    def write_query_to_file(self, file_path: str, file_name: str):
         """
         Write the query to a file.
 
         Args:
-            file_path: The path to the file
-            file_name: The name of the file
+            file_path (str): The path to the file
+            file_name (str): The name of the file
         """
         with open(os.path.join(file_path, file_name + ".sql"), "w") as file:
             file.write(self.query)
 
     @staticmethod
-    def get_sql_operator(param_name):
+    def get_sql_operator(param_name: str):
         """Get the sql operator from the parameter name.
 
         Args:
-            param_name: The name of the parameter to get the operator from
+            param_name (str): The name of the parameter to get the operator from
 
         Returns:
             The sql operator as a string
