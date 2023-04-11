@@ -121,11 +121,6 @@ def get_file_contents(path_from_root):
         return f.read()
 
 
-def get_file_contents_as_text(path_from_root):
-    """Get the contents of a file from the root directory as a sqlalchemy text object."""
-    return text(get_file_contents(path_from_root))
-
-
 def response(query: str, dw: Session, params: dict):
     """
     Return a response from a query.

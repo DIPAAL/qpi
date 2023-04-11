@@ -13,7 +13,7 @@ class QueryBuilder:
         Initialise the query builder.
 
         Args:
-            sql_path: The path to the folder containing the sql files
+            sql_path: The path to the folder containing the sql file
         """
         self.sql_path = sql_path
         self.query = ""
@@ -24,7 +24,7 @@ class QueryBuilder:
 
         Args:
             sql_file: The name of the sql file to add to the query
-            new_line: Whether to add a new line before the sql files content in added to the query
+            new_line: Whether to add a new line before the sql file's content is added to the query
         """
         if not sql_file.endswith(".sql"):
             raise ValueError("File must be a .sql file")
@@ -56,7 +56,7 @@ class QueryBuilder:
         Args:
             sql_file: The name of the sql file to add to the query
             replace: A dict with keys to replace in the sql file and the values to replace them with
-            new_line: Whether to add a new line before the sql files content in added to the query
+            new_line: Whether to add a new line before the sql file's content is added to the query
         """
         if new_line:
             self.query += "\n"
@@ -134,20 +134,19 @@ class QueryBuilder:
         with open(os.path.join(file_path, file_name + ".sql"), "w") as file:
             file.write(self.query)
 
+    @staticmethod
+    def get_sql_operator(param_name):
+        """Get the sql operator from the parameter name.
 
-def get_sql_operator(param_name):
-    """Get the sql operator from the parameter name.
+        Args:
+            param_name: The name of the parameter to get the operator from
 
-    Args:
-        param_name: The name of the parameter to get the operator from
-
-    Returns:
-        The sql operator as a string
-    """
-
-    operators = {"_in": "IN", "_gt": ">", "_lt": "<", "_nin": "NOT IN", "_gte": ">=", "_lte": "<="}
-    key_start_idx = param_name.rfind('_')
-    try:
-        return operators[param_name[key_start_idx:]]
-    except KeyError:
-        raise ValueError("Invalid type of parameter")
+        Returns:
+            The sql operator as a string
+        """
+        operators = {"_in": "IN", "_gt": ">", "_lt": "<", "_nin": "NOT IN", "_gte": ">=", "_lte": "<="}
+        key_start_idx = param_name.rfind('_')
+        try:
+            return operators[param_name[key_start_idx:]]
+        except KeyError:
+            raise ValueError("Invalid type of parameter")

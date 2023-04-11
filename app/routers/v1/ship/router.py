@@ -18,6 +18,7 @@ router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
+
 @router.get("/")
 async def ships(  # noqa: C901
         # Pagination

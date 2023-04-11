@@ -3,7 +3,7 @@ from enum import Enum
 
 
 class DWTABLE(str, Enum):
-    """Enum for all data warehouse tables."""
+    """Enum for all data warehouse relations."""
 
     dim_cell_50m = "dim_cell_50m"
     dim_cell_200m = "dim_cell_200m"
@@ -27,7 +27,7 @@ class DWTABLE(str, Enum):
 
 
 class MISCTABLE(str, Enum):
-    """All miscellaneous tables."""
+    """All miscellaneous relations."""
 
     audit_log = "audit_log"
     benchmark_result = "benchmark_result"

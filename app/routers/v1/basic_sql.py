@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_dw
-from app.api_constants import DWTABLE
+from app.schemas.relations import DWTABLE
 
 
 router = APIRouter()

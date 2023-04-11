@@ -1,7 +1,7 @@
 from contextlib import nullcontext as does_not_raise
 import pytest
 
-from app.querybuilder import QueryBuilder, get_sql_operator
+from app.querybuilder import QueryBuilder
 import os
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "SQL")
@@ -33,7 +33,7 @@ def test_add_string():
 
 def test_add_sql_with_replace():
     QB = QueryBuilder(SQL_PATH)
-    replace_dict = {"{TABLE}": "dim_ship"}
+    replace_dict = {"TABLE": "dim_ship"}
     QB.add_sql_with_replace("select_all_from_table.sql", replace_dict, new_line=False)
     assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT :limit;"
 
@@ -62,7 +62,8 @@ def test_add_where_list_to_tuple():
      ("mid_lte", "<="), ("mid_lt", "<")]
 )
 def test_get_sql_operator(input_parameter, expected_operator):
-    assert get_sql_operator(input_parameter) == expected_operator
+    qb = QueryBuilder(SQL_PATH)
+    assert qb.get_sql_operator(input_parameter) == expected_operator
 
 
 @pytest.mark.parametrize(
@@ -75,5 +76,6 @@ def test_get_sql_operator(input_parameter, expected_operator):
      ]
 )
 def test_get_sql_operator_error(input_param_error, expected_error):
+    qb = QueryBuilder(SQL_PATH)
     with expected_error:
-        assert get_sql_operator(input_param_error)
+        assert qb.get_sql_operator(input_param_error)
