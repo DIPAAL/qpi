@@ -50,16 +50,16 @@ def cell_facts(
     }
     df = pd.read_sql(text(query), dw.bind.connect(), params=parameters).replace(np.nan, None)
 
-    dicts = [cell_fact_to_dict(row) for _, row in df.iterrows()]
+    dicts = [convert_db_row_to_cell_fact(row) for _, row in df.iterrows()]
     return JSONResponse(content=jsonable_encoder(dicts))
 
 
 TIMESTAMP_FORMAT: str = '%Y-%m-%dT%H:%M:%SZ'
 
 
-def cell_fact_to_dict(db_row: pd.Series) -> FactCell:
+def convert_db_row_to_cell_fact(db_row: pd.Series) -> FactCell:
     """
-    Convert from pandas series representation to return type as a dictionary.
+    Convert from pandas series representation to an object based on FactCell schema.
 
     Keyword Arguments:
         db_row: Pandas series containing a single cell fact
