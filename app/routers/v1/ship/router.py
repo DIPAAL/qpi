@@ -6,7 +6,7 @@ Contains endpoints to retrieve information about a specific ship or a set of shi
 from fastapi import APIRouter, Depends, Path, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.dependencies import get_dw
-from app.querybuilder import get_sql_operator, QueryBuilder
+from app.querybuilder import QueryBuilder
 from helper_functions import response
 from app.schemas.search_method_spatial import SearchMethodSpatial
 from app.schemas.mobile_type import MobileType
@@ -253,19 +253,18 @@ async def ships(  # noqa: C901
     for key, value in filter_params_ship.items():
         if value:
             param_name = key.rsplit("_", 1)[0]
-            operator = get_sql_operator(key)
-            qb.add_where("ds." + param_name, operator, value)
+            qb.add_where("ds." + param_name, qb.get_sql_operator(key), value)
 
     # If there are ship type filters, add the appropriate where statement(s) to query
     for key, value in filter_params_ship_type.items():
         if value:
             param_name = key.rsplit("_", 1)[0]
-            operator = get_sql_operator(key)
-            qb.add_where("dst." + param_name, operator, value)
+            qb.add_where("dst." + param_name, qb.get_sql_operator(key), value)
 
-    # Group by statement added to query, also introducing the order by, offset and limit statements
-    qb.add_sql("group_by_ship.sql")
+    # Statements for order by, offset and limit
+    qb.add_sql("order_limit_offset.sql")
 
+    # Finally collect the query string and return the response
     final_query = qb.get_query_str()
     return response(final_query, dw, params)
 

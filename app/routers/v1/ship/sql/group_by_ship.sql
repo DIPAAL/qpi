@@ -1,1 +1,0 @@
-GROUP BY ds.ship_id, dst.mobile_type, dst.ship_type ORDER BY ds.ship_id LIMIT :limit OFFSET :offset;
