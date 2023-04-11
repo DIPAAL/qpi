@@ -26,14 +26,21 @@ class QueryBuilder:
             sql_file (str): The name of the sql file to add to the query
             new_line (bool): Whether to add a new line before the sql file's content is added to the query
         """
-        if not sql_file.endswith(".sql"):
-            raise ValueError("File must be a .sql file")
+        self._is_sql_file(sql_file)
 
         if new_line:
             self.query += "\n"
 
         self.query += get_file_contents(os.path.join(self.sql_path, sql_file))
         return self
+
+
+    @staticmethod
+    def _is_sql_file(file: str):
+        """Check if a file is a sql file."""
+        if not file.endswith(".sql"):
+            raise ValueError("File must be a .sql file")
+
 
     def add_string(self, string: str, new_line=True):
         """
@@ -59,8 +66,11 @@ class QueryBuilder:
                 values representing the strings to replace them with
             new_line (bool): Whether to add a new line before the sql file's content is added to the query
         """
+        self._is_sql_file(sql_file)
+
         if new_line:
             self.query += "\n"
+
         file = get_file_contents(os.path.join(self.sql_path, sql_file))
 
         file = file.format(**replace)
