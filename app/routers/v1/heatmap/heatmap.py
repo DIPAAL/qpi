@@ -77,7 +77,7 @@ def metadata(db: Session = Depends(get_dw)):
 def single_heatmap(
         spatial_resolution: SpatialResolution,
         mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
-        ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
+        ship_types: list[ShipType] = Query(default=[ship_type for ship_type in ShipType]),
         output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff),
         min_x: int = Query(default=3600000),
         min_y: int = Query(default=3030000),
@@ -286,7 +286,7 @@ def mapalgebra_heatmap(
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        image_time_taken_sec, png = try_get_png_from_geotiff(result[0].tobytes(), True)
+        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes(), True)
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
                                      'Query-Time': str(query_time_taken_sec),
