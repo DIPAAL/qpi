@@ -86,7 +86,7 @@ async def ships(  # noqa: C901
         ship_type_in: list[ShipType] | None = Query(default=None),
         ship_type_nin: list[ShipType] | None = Query(default=None),
         # Temporal bounds
-        from_datetime: datetime.datetime = Query(default=None),
+        from_datetime: datetime.datetime = Query(default=None, example="2021-01-01T00:00:00Z"),
         to_datetime: datetime.datetime = Query(default=None),
         # Spatial bounds
         search_method: SearchMethodSpatial = Query(default="cell_1000m"),
@@ -148,6 +148,8 @@ async def ships(  # noqa: C901
         "offset": skip,
         "limit": limit
     }
+    # Placeholders to be replaced in the final query.
+    placeholders = {}
 
     # First, the select statement is added to the query, which is the same for all queries.
     # This part of the query also determines what the output for the client will be.
@@ -158,62 +160,61 @@ async def ships(  # noqa: C901
         qb.add_sql("ship_by_id.sql")
         return response(qb.get_query_str(), dw, {"id": ship_id})
 
-    # Filters for temporal/spatial bounds are assumed to be false until proven otherwise.
-    temporal_bounds = False
-    spatial_bounds = False
-
+    # Setup of spatial bounds if provided
     spatial_params = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
+    spatial_bounds = True if any(spatial_params) else False
 
-    if any(spatial_params.values()):
-        spatial_bounds = True
-        if None in spatial_params.values():
-            raise HTTPException(status_code=400, detail="Spatial bounds not complete")
-        params.update(spatial_params)
+    if spatial_bounds and None in spatial_params.values():
+        raise HTTPException(status_code=400, detail="Spatial bounds not complete")
+    params.update(spatial_params)
 
-    # FIXME When using trajectories, it requires a start_date and end_date, which is not the case for cells.
-    #  Add a check for this.
-    temporal_params = {"from_date": from_datetime,
-                       "from_time": from_datetime,
-                       "to_date": to_datetime,
-                       "to_time": to_datetime}
+    # Setup of temporal bounds if provided
+    temporal_params = {}
 
-    if any(temporal_params.values()):
-        # Format datetime objects to integers, depending on the type of temporal parameter.
-        temporal_bounds = True
-        for key, value in temporal_params.items():
-            if key[-4:] == "date":
-                temporal_params[key] = int(value.strftime("%Y%m%d"))
-            elif key[-4:] == "time":
-                temporal_params[key] = int(value.strftime("%H%M%S"))
-        params.update(temporal_params)
+    if from_datetime:
+        temporal_params.update({
+            "from_date": int(from_datetime.strftime("%Y%m%d")),
+            "from_time": int(from_datetime.strftime("%H%M%S"))
+        })
+    if to_datetime:
+        temporal_params.update({
+            "to_date": int(to_datetime.strftime("%Y%m%d")),
+            "to_time": int(to_datetime.strftime("%H%M%S")),
+        })
+    params.update(temporal_params)
+    temporal_bounds = True if any(temporal_params) else False
 
-    # From statement added to query, depending on search method (cell or trajectory and temporal/spatial bounds)
+    # From and where statements added to query, depending on search method (cell or trajectory and temporal/spatial bounds)
     # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
     if not temporal_bounds and not spatial_bounds:
         qb.add_sql("from_ship.sql")
 
     elif search_method == SearchMethodSpatial.trajectories:
         qb.add_sql("from_trajectory.sql")
-        if temporal_bounds or spatial_bounds:
-            qb.add_string("WHERE")
-        if temporal_bounds and spatial_bounds:
-            qb.add_sql("trajectory_temporal.sql").add_string(" AND", new_line=False).add_sql("trajectory_spatial.sql")
-        elif temporal_bounds:
-            qb.add_sql("trajectory_temporal.sql")
-        elif spatial_bounds:
-            qb.add_sql("trajectory_spatial.sql")
+        if spatial_bounds:
+            qb.add_string("JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id")
+            qb.add_where_from_string("st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), "
+                                     "st_transform(dt.trajectory::geometry, 3034))")
+        if temporal_bounds:
+            qb.add_where("ft.start_date_id", ">=", temporal_params["from_date"]) \
+                .add_where("ft.start_date_id", "<=", temporal_params["from_date"]) \
+                .add_where("ft.start_time_id", ">=", temporal_params["from_time"]) \
+                .add_where("ft.start_time_id", "<=", temporal_params["to_time"])
+
 
     elif "cell" in search_method.value:
-        replace = {"CELL_SIZE": search_method.value}
-        qb.add_sql_with_replace("from_cell.sql", replace)
-        if temporal_bounds or spatial_bounds:
-            qb.add_string("WHERE")
+        qb.add_sql("from_cell.sql")
+        placeholders.update({"CELL_SIZE": search_method.value})
         if temporal_bounds and spatial_bounds:
-            qb.add_sql("cell_temporal.sql").add_string(" AND", new_line=False).add_sql("cell_spatial.sql")
+            qb.add_where_from_file("stbox_spatialtemporal.sql")
+            placeholders.update({"RELATION_STBOX": "fc"})
         elif temporal_bounds:
-            qb.add_sql("cell_temporal.sql")
+            qb.add_where("fc.entry_date_id", ">=", temporal_params["from_date"])\
+                .add_where("fc.entry_date_id", "<=", temporal_params["from_date"])\
+                .add_where("fc.entry_time_id", ">=", temporal_params["from_time"])\
+                .add_where("fc.entry_time_id", "<=", temporal_params["to_time"])
         elif spatial_bounds:
-            qb.add_sql("cell_spatial.sql")
+            qb.add_where_from_string("ST_CONTAINS(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)")
     else:
         raise HTTPException(status_code=400, detail="Search method not supported")
 
@@ -253,18 +254,19 @@ async def ships(  # noqa: C901
     for key, value in filter_params_ship.items():
         if value:
             param_name = key.rsplit("_", 1)[0]
-            qb.add_where("ds." + param_name, qb.get_sql_operator(key), value)
+            qb.add_where("ds." + param_name, qb.get_sql_operator(key), value, params)
 
     # If there are ship type filters, add the appropriate where statement(s) to query
     for key, value in filter_params_ship_type.items():
         if value:
             param_name = key.rsplit("_", 1)[0]
-            qb.add_where("dst." + param_name, qb.get_sql_operator(key), value)
+            qb.add_where("dst." + param_name, qb.get_sql_operator(key), value, params)
 
     # Statements for order by, offset and limit
     qb.add_sql("order_limit_offset.sql")
 
-    # Finally collect the query string and return the response
+    # Finally, replace all placeholders in the query, then collect the query string and return the response
+    qb.format_query(placeholders)
     final_query = qb.get_query_str()
     return response(final_query, dw, params)
 
