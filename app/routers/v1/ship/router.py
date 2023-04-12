@@ -162,7 +162,7 @@ async def ships(  # noqa: C901
 
     # Setup of spatial bounds if provided
     spatial_params = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
-    spatial_bounds = True if any(spatial_params) else False
+    spatial_bounds = True if any(value is not None for value in spatial_params.values()) else False
 
     if spatial_bounds and None in spatial_params.values():
         raise HTTPException(status_code=400, detail="Spatial bounds not complete")
@@ -181,6 +181,7 @@ async def ships(  # noqa: C901
             "to_date": int(to_datetime.strftime("%Y%m%d")),
             "to_time": int(to_datetime.strftime("%H%M%S")),
         })
+
     params.update(temporal_params)
     temporal_bounds = True if any(temporal_params) else False
 
@@ -196,10 +197,8 @@ async def ships(  # noqa: C901
             qb.add_where_from_string("st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), "
                                      "st_transform(dt.trajectory::geometry, 3034))")
         if temporal_bounds:
-            qb.add_where("ft.start_date_id", ">=", temporal_params["from_date"]) \
-                .add_where("ft.start_date_id", "<=", temporal_params["from_date"]) \
-                .add_where("ft.start_time_id", ">=", temporal_params["from_time"]) \
-                .add_where("ft.start_time_id", "<=", temporal_params["to_time"])
+            temporal_attribute = "ft.start_date_id"
+            add_temporal_filter(qb, temporal_attribute, temporal_params)
 
     elif "cell" in search_method.value:
         qb.add_sql("from_cell.sql")
@@ -208,10 +207,8 @@ async def ships(  # noqa: C901
             qb.add_where_from_file("stbox_spatialtemporal.sql")
             placeholders.update({"RELATION_STBOX": "fc"})
         elif temporal_bounds:
-            qb.add_where("fc.entry_date_id", ">=", temporal_params["from_date"])\
-                .add_where("fc.entry_date_id", "<=", temporal_params["from_date"])\
-                .add_where("fc.entry_time_id", ">=", temporal_params["from_time"])\
-                .add_where("fc.entry_time_id", "<=", temporal_params["to_time"])
+            temporal_attribute = "fc.entry_date_id"
+            add_temporal_filter(qb, temporal_attribute, temporal_params)
         elif spatial_bounds:
             qb.add_where_from_string("ST_CONTAINS(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)")
     else:
@@ -268,6 +265,17 @@ async def ships(  # noqa: C901
     qb.format_query(placeholders)
     final_query = qb.get_query_str()
     return response(final_query, dw, params)
+
+
+def add_temporal_filter(qb: QueryBuilder, temporal_attribute: str, temporal_params: dict):
+    """Add a temporal filter to the query builder."""
+    if temporal_params["from_date"] and temporal_params["from_time"]:
+        qb.add_where(temporal_attribute, ">=", temporal_params["from_date"])\
+            .add_where(temporal_attribute, ">=", temporal_params["from_time"])
+    if temporal_params["to_date"] and temporal_params["to_time"]:
+        qb.add_where(temporal_attribute, "<=", temporal_params["to_date"])\
+            .add_where(temporal_attribute, "<=", temporal_params["to_time"])
+    return qb
 
 
 def get_values_from_enum_list(enum_list, enum_type):
