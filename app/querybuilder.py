@@ -36,13 +36,11 @@ class QueryBuilder:
         self.query += get_file_contents(os.path.join(self.sql_path, sql_file))
         return self
 
-
     @staticmethod
     def _is_sql_file(file: str):
         """Check if a file is a sql file."""
         if not file.endswith(".sql"):
             raise ValueError("File must be a .sql file")
-
 
     def add_string(self, string: str, new_line=True):
         """
@@ -57,7 +55,6 @@ class QueryBuilder:
 
         self.query += string
         return self
-
 
     def add_where(self, param_name: str, operator: str, value: Any, param_dict: dict = None, new_line=True):
         """
@@ -76,24 +73,16 @@ class QueryBuilder:
 
         # If the value is a number, then we can trust it is a valid value
         if isinstance(value, numbers.Number):
-            if "WHERE" in self.query:
-                self.query += f"AND {param_name} {operator} {value}"
-            else:
-                self.query += f"WHERE {param_name} {operator} {value}"
-            return self
+            self._prefix_where_or_and(f"{param_name} {operator} {value}")
 
         if not param_dict:
             raise ValueError("param_dict must be provided if value is not an int")
 
-        value_placeholder = f"{'param' + str(self.inc_num)}"
-
         # If the value is not a number, then we must create placeholders for the value
         # This is to prevent SQL injection
-        if "WHERE" in self.query:
-            self.query += f"AND {param_name} {operator} :{value_placeholder}"
-        else:
-            self.query += f"WHERE {param_name} {operator} :{value_placeholder}"
+        value_placeholder = f"{'param' + str(self.inc_num)}"
         self.inc_num += 1
+        self._prefix_where_or_and(f"{param_name} {operator} :{value_placeholder}")
 
         if isinstance(value, list):
             value = tuple(value)
@@ -113,10 +102,7 @@ class QueryBuilder:
         if new_line:
             self.query += "\n"
 
-        if "WHERE" in self.query:
-            self.query += f"AND {get_file_contents(os.path.join(self.sql_path, sql_file))}"
-        else:
-            self.query += f"WHERE {get_file_contents(os.path.join(self.sql_path, sql_file))}"
+        self._prefix_where_or_and(get_file_contents(os.path.join(self.sql_path, sql_file)))
 
         return self
 
@@ -131,12 +117,13 @@ class QueryBuilder:
         if new_line:
             self.query += "\n"
 
-        if "WHERE" in self.query:
-            self.query += f"AND {string}"
-        else:
-            self.query += f"WHERE {string}"
+        self._prefix_where_or_and(string)
 
         return self
+
+    def _prefix_where_or_and(self, string: str):
+        """Check if the query already has a where clause."""
+        self.query += f"AND {string}" if "WHERE" in self.query else f"WHERE {string}"
 
     def end_query(self):
         """Add a semicolon to the end of the query."""

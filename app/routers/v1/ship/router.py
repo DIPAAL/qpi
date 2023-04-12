@@ -184,7 +184,7 @@ async def ships(  # noqa: C901
     params.update(temporal_params)
     temporal_bounds = True if any(temporal_params) else False
 
-    # From and where statements added to query, depending on search method (cell or trajectory and temporal/spatial bounds)
+    # From and where statements added to query, depending on search method and temporal/spatial bounds
     # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
     if not temporal_bounds and not spatial_bounds:
         qb.add_sql("from_ship.sql")
@@ -200,7 +200,6 @@ async def ships(  # noqa: C901
                 .add_where("ft.start_date_id", "<=", temporal_params["from_date"]) \
                 .add_where("ft.start_time_id", ">=", temporal_params["from_time"]) \
                 .add_where("ft.start_time_id", "<=", temporal_params["to_time"])
-
 
     elif "cell" in search_method.value:
         qb.add_sql("from_cell.sql")
