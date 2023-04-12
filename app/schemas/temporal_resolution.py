@@ -5,8 +5,8 @@ from enum import Enum
 class TemporalResolution(str, Enum):
     """Enum of available temporal resolutions."""
 
-    monthly = "monthly"
-    hourly = "hourly"
     daily = "daily"
+    weekly = "weekly"
+    monthly = "monthly"
     quarterly = "quarterly"
     yearly = "yearly"
