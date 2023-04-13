@@ -9,6 +9,7 @@ from app.routers.v1.audit_log import audit_log
 from app.routers.v1.heatmap import heatmap
 from app.routers.v1.cell import cell
 from app.routers.v1.ship import router as ship
+from app.routers.v1.trajectory import router as trajectory
 
 # Routers for different versions of the API can be added here
 # Remember to add the proper prefix and tags to the router
@@ -19,6 +20,7 @@ router_v1.include_router(ship.router, prefix="/ships", tags=["ships"])
 router_v1.include_router(heatmap.router, prefix="/heatmap", tags=["heatmap"])
 router_v1.include_router(cell.router, prefix='/cells', tags=['cell'])
 router_v1.include_router(audit_log.router, prefix="/audit_log", tags=["audit_log"])
+router_v1.include_router(trajectory.router, prefix="/trajectory", tags=["trajectory"])
 
 # The main router for the API app. This router is imported in api_main
 router_main = APIRouter()
