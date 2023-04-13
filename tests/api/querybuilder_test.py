@@ -31,13 +31,6 @@ def test_add_string():
     assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT 10;"
 
 
-def test_add_sql_with_replace():
-    QB = QueryBuilder(SQL_PATH)
-    replace_dict = {"TABLE": "dim_ship"}
-    QB.add_sql_with_replace("select_all_from_table.sql", replace_dict, new_line=False)
-    assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT :limit;"
-
-
 def test_add_where():
     QB = QueryBuilder(SQL_PATH)
     QB.add_string("SELECT * FROM dim_ship LIMIT 10", new_line=False)
@@ -49,10 +42,18 @@ def test_add_where():
 
 def test_add_where_list_to_tuple():
     QB = QueryBuilder(SQL_PATH)
+    params = {}
     QB.add_string("SELECT * FROM dim_ship LIMIT 10", new_line=False)
-    QB.add_where("ds.ship_id", "IN", [2])
+    QB.add_where("ds.ship_id", "IN", [2], params)
     QB.end_query()
-    assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT 10\nWHERE ds.ship_id IN (2);"
+    assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT 10\nWHERE ds.ship_id IN :param0;"
+
+
+def test_format_query():
+    qb = QueryBuilder(SQL_PATH)
+    placeholders = {"RELATION": "dim_ship"}
+    qb.add_string("SELECT * FROM {RELATION} LIMIT 10", new_line=False).format_query(placeholders)
+    assert qb.get_query_str() == "SELECT * FROM dim_ship LIMIT 10"
 
 
 @pytest.mark.parametrize(

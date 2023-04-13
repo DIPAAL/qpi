@@ -74,8 +74,9 @@ class QueryBuilder:
         # If the value is a number, then we can trust it is a valid value
         if isinstance(value, numbers.Number):
             self._prefix_where_or_and(f"{param_name} {operator} {value}")
+            return self
 
-        if not param_dict:
+        if isinstance(param_dict, type(None)):
             raise ValueError("param_dict must be provided if value is not an int")
 
         # If the value is not a number, then we must create placeholders for the value
