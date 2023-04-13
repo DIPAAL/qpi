@@ -102,8 +102,7 @@ class QueryBuilder:
         if isinstance(value, list):
             value = tuple(value)
 
-        local_dict = {value_placeholder: value}
-        param_dict.update(local_dict)
+        param_dict[value_placeholder] = value
         return self
 
     def add_where_from_file(self, sql_file, new_line=True):
