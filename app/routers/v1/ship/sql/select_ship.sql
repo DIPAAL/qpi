@@ -1,4 +1,4 @@
-SELECT ds.ship_id,
+SELECT DISTINCT ds.ship_id,
        ds.name,
        ds.callsign,
        ds.mmsi,

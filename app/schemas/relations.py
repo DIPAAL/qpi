@@ -2,7 +2,7 @@
 from enum import Enum
 
 
-class DWTABLE(str, Enum):
+class DWRELATION(str, Enum):
     """Enum for all data warehouse relations."""
 
     dim_cell_50m = "dim_cell_50m"
@@ -26,7 +26,7 @@ class DWTABLE(str, Enum):
     fact_trajectory = "fact_trajectory"
 
 
-class MISCTABLE(str, Enum):
+class MISCRELATION(str, Enum):
     """All miscellaneous relations."""
 
     audit_log = "audit_log"

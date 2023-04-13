@@ -27,6 +27,9 @@ class QueryBuilder:
         Args:
             sql_file (str): The name of the sql file to add to the query
             new_line (bool): Whether to add a new line before the sql file's content is added to the query
+
+        Returns:
+            QueryBuilder: The query builder object
         """
         self._is_sql_file(sql_file)
 
@@ -38,7 +41,12 @@ class QueryBuilder:
 
     @staticmethod
     def _is_sql_file(file: str):
-        """Check if a file is a sql file."""
+        """
+        Check if a file is a sql file.
+
+        Raises:
+            ValueError: If the file is not a sql file
+        """
         if not file.endswith(".sql"):
             raise ValueError("File must be a .sql file")
 
@@ -49,6 +57,9 @@ class QueryBuilder:
         Args:
             string (str): The string to add to the query
             new_line (bool): Whether to add a new line before the string is added to the query
+
+        Returns:
+            QueryBuilder: The query builder object
         """
         if new_line:
             self.query += "\n"
@@ -67,6 +78,9 @@ class QueryBuilder:
             param_dict (dict): The dict to add the parameter and its value to
             param_name (str): The name of the parameter to add to the dict
             new_line (bool): Whether to add a new line before the where clause is added to the query
+
+        Returns:
+            QueryBuilder: The query builder object
         """
         if new_line:
             self.query += "\n"
@@ -99,6 +113,9 @@ class QueryBuilder:
         Args:
             sql_file (str): The name of the sql file to add to the query
             new_line (bool): Whether to add a new line before the where clause is added to the query
+
+        Returns:
+            QueryBuilder: The query builder object
         """
         if new_line:
             self.query += "\n"
@@ -114,6 +131,9 @@ class QueryBuilder:
         Args:
             string (str): The string to add to the query
             new_line (bool): Whether to add a new line before the where clause is added to the query
+
+        Returns:
+            QueryBuilder: The query builder object
         """
         if new_line:
             self.query += "\n"

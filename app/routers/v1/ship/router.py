@@ -22,7 +22,7 @@ SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 @router.get("/")
 async def ships(  # noqa: C901
         # Pagination
-        skip: int = Query(default=0, description="Skip the first X ships returned by the request"),
+        offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
         limit: int = Query(default=100, description="Limit the number of ships returned by the request to X"),
         # Filter for a specific ship
         ship_id: int | None = Query(default=None,
@@ -179,7 +179,7 @@ async def ships(  # noqa: C901
 
     # Parameters to be added to final query.
     params = {
-        "offset": skip,
+        "offset": offset,
         "limit": limit
     }
     # Placeholders to be replaced in the final query.
@@ -302,7 +302,11 @@ async def ships(  # noqa: C901
 
 
 def add_temporal_filter(qb: QueryBuilder, temporal_attribute: str, temporal_params: dict):
-    """Add a temporal filter to the query builder."""
+    """
+    Add a temporal filter to the query builder.
+
+    Returns: The query builder with the temporal filters added.
+    """
     if temporal_params["from_date"] and temporal_params["from_time"]:
         qb.add_where(temporal_attribute, ">=", temporal_params["from_date"])\
             .add_where(temporal_attribute, ">=", temporal_params["from_time"])
@@ -313,7 +317,11 @@ def add_temporal_filter(qb: QueryBuilder, temporal_attribute: str, temporal_para
 
 
 def get_values_from_enum_list(enum_list, enum_type):
-    """Return a list of values from an enum list."""
+    """
+    Get the values from an enum list.
+
+    Returns: A list of values from an enum list.
+    """
     if enum_list:
         return [enum_type(value).value for value in enum_list]
 
