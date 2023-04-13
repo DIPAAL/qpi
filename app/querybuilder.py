@@ -60,7 +60,6 @@ class QueryBuilder:
         Returns:
             QueryBuilder: The query builder object
         """
-
         self.query += "\n"
 
         self.query += string
@@ -81,7 +80,6 @@ class QueryBuilder:
         Returns:
             QueryBuilder: The query builder object
         """
-
         self.query += "\n"
 
         # If the value is a number, then we can trust it is a valid value
