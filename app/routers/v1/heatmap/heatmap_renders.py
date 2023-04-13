@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import imageio.v2 as imageio
 
-from app.routers.v1.heatmap.schemas.multi_output_format import MultiOutputFormat
+from app.schemas.multi_output_format import MultiOutputFormat
 
 satellite = rio.open("qpi/run/references/danish_waters_3034.tiff")
 dipaal_logo = Image.open("qpi/run/references/dipaal.png")
