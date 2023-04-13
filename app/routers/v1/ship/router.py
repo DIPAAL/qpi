@@ -187,7 +187,7 @@ async def ships(  # noqa: C901
 
     # First, the select statement is added to the query, which is the same for all queries.
     # This part of the query also determines what the output for the client will be.
-    qb.add_sql("select_ship.sql", new_line=False)
+    qb.add_sql("select_ship.sql")
 
     # If ship_id is provided, only one ship can be found, done by a simple query.
     if ship_id:
