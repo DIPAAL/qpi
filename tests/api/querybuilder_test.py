@@ -21,39 +21,39 @@ def test_file_not_sql():
 
 def test_add_sql():
     QB = QueryBuilder(SQL_PATH)
-    QB.add_sql("select_all_ships_limit_10.sql", new_line=False)
-    assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT 10;"
+    QB.add_sql("select_all_ships_limit_10.sql")
+    assert QB.get_query_str() == "\nSELECT * FROM dim_ship LIMIT 10;"
 
 
 def test_add_string():
     QB = QueryBuilder(SQL_PATH)
-    QB.add_string("SELECT * FROM dim_ship LIMIT 10;", new_line=False)
-    assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT 10;"
+    QB.add_string("SELECT * FROM dim_ship LIMIT 10;")
+    assert QB.get_query_str() == "\nSELECT * FROM dim_ship LIMIT 10;"
 
 
 def test_add_where():
     QB = QueryBuilder(SQL_PATH)
-    QB.add_string("SELECT * FROM dim_ship LIMIT 10", new_line=False)
+    QB.add_string("SELECT * FROM dim_ship LIMIT 10")
     QB.add_where("ds.ship_id", ">", 2)
     QB.add_where("ds.ship_id", "<", 5)
     QB.end_query()
-    assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT 10\nWHERE ds.ship_id > 2\nAND ds.ship_id < 5;"
+    assert QB.get_query_str() == "\nSELECT * FROM dim_ship LIMIT 10\nWHERE ds.ship_id > 2\nAND ds.ship_id < 5;"
 
 
 def test_add_where_list_to_tuple():
     QB = QueryBuilder(SQL_PATH)
     params = {}
-    QB.add_string("SELECT * FROM dim_ship LIMIT 10", new_line=False)
+    QB.add_string("SELECT * FROM dim_ship LIMIT 10")
     QB.add_where("ds.ship_id", "IN", [2], params)
     QB.end_query()
-    assert QB.get_query_str() == "SELECT * FROM dim_ship LIMIT 10\nWHERE ds.ship_id IN :param0;"
+    assert QB.get_query_str() == "\nSELECT * FROM dim_ship LIMIT 10\nWHERE ds.ship_id IN :param0;"
 
 
 def test_format_query():
     qb = QueryBuilder(SQL_PATH)
     placeholders = {"RELATION": "dim_ship"}
-    qb.add_string("SELECT * FROM {RELATION} LIMIT 10", new_line=False).format_query(placeholders)
-    assert qb.get_query_str() == "SELECT * FROM dim_ship LIMIT 10"
+    qb.add_string("SELECT * FROM {RELATION} LIMIT 10").format_query(placeholders)
+    assert qb.get_query_str() == "\nSELECT * FROM dim_ship LIMIT 10"
 
 
 @pytest.mark.parametrize(

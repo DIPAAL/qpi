@@ -20,7 +20,7 @@ class QueryBuilder:
         self.inc_num = 0
         self.query = ""
 
-    def add_sql(self, sql_file: str, new_line=True):
+    def add_sql(self, sql_file: str):
         """
         Add the contents of a sql file to the query.
 
@@ -33,8 +33,7 @@ class QueryBuilder:
         """
         self._is_sql_file(sql_file)
 
-        if new_line:
-            self.query += "\n"
+        self.query += "\n"
 
         self.query += get_file_contents(os.path.join(self.sql_path, sql_file))
         return self
@@ -50,7 +49,7 @@ class QueryBuilder:
         if not file.endswith(".sql"):
             raise ValueError("File must be a .sql file")
 
-    def add_string(self, string: str, new_line=True):
+    def add_string(self, string: str):
         """
         Add a string to the query.
 
@@ -61,13 +60,13 @@ class QueryBuilder:
         Returns:
             QueryBuilder: The query builder object
         """
-        if new_line:
-            self.query += "\n"
+
+        self.query += "\n"
 
         self.query += string
         return self
 
-    def add_where(self, param_name: str, operator: str, value: Any, param_dict: dict = None, new_line=True):
+    def add_where(self, param_name: str, operator: str, value: Any, param_dict: dict = None):
         """
         Add a where clause to the query and add the parameter and its value to the param_dict if it is provided.
 
@@ -82,8 +81,8 @@ class QueryBuilder:
         Returns:
             QueryBuilder: The query builder object
         """
-        if new_line:
-            self.query += "\n"
+
+        self.query += "\n"
 
         # If the value is a number, then we can trust it is a valid value
         if isinstance(value, numbers.Number):
@@ -105,7 +104,7 @@ class QueryBuilder:
         param_dict[value_placeholder] = value
         return self
 
-    def add_where_from_file(self, sql_file, new_line=True):
+    def add_where_from_file(self, sql_file):
         """
         Add a where clause from a file to the query.
 
@@ -116,14 +115,13 @@ class QueryBuilder:
         Returns:
             QueryBuilder: The query builder object
         """
-        if new_line:
-            self.query += "\n"
+        self.query += "\n"
 
         self._prefix_where_or_and(get_file_contents(os.path.join(self.sql_path, sql_file)))
 
         return self
 
-    def add_where_from_string(self, string, new_line=True):
+    def add_where_from_string(self, string):
         """
         Add a where clause from a string to the query.
 
@@ -134,8 +132,7 @@ class QueryBuilder:
         Returns:
             QueryBuilder: The query builder object
         """
-        if new_line:
-            self.query += "\n"
+        self.query += "\n"
 
         self._prefix_where_or_and(string)
 
@@ -164,17 +161,6 @@ class QueryBuilder:
         Returns: The query as string
         """
         return self.query
-
-    def write_query_to_file(self, file_path: str, file_name: str):
-        """
-        Write the query to a file.
-
-        Args:
-            file_path (str): The path to the file
-            file_name (str): The name of the file
-        """
-        with open(os.path.join(file_path, file_name + ".sql"), "w") as file:
-            file.write(self.query)
 
     @staticmethod
     def get_sql_operator(param_name: str):
