@@ -1,1 +1,0 @@
-ORDER BY ds.ship_id LIMIT :limit OFFSET :offset;

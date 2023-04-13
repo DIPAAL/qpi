@@ -22,124 +22,158 @@ SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 @router.get("/")
 async def ships(  # noqa: C901
         # Pagination
-        skip: int = 0,
-        limit: int = 10,
+        skip: int = Query(default=0, description="Skip the first X ships returned by the request"),
+        limit: int = Query(default=100, description="Limit the number of ships returned by the request to X"),
         # Filter for a specific ship
-        ship_id: int | None = None,
+        ship_id: int | None = Query(default=None,
+                                    description="Filter for a specific ship by its ID in the fact_ship relation"),
         # Filters for ships
-        mmsi_in: list[int] | None = Query(default=None),
-        mmsi_nin: list[int] | None = Query(default=None),
-        mmsi_gt: int | None = Query(default=None),
-        mmsi_gte: int | None = Query(default=None),
-        mmsi_lte: int | None = Query(default=None),
-        mmsi_lt: int | None = Query(default=None),
-        mid_in: list[int] | None = Query(default=None),
-        mid_nin: list[int] | None = Query(default=None),
-        mid_gt: int | None = Query(default=None),
-        mid_gte: int | None = Query(default=None),
-        mid_lte: int | None = Query(default=None),
-        mid_lt: int | None = Query(default=None),
-        imo_in: list[int] | None = Query(default=None),
-        imo_nin: list[int] | None = Query(default=None),
-        imo_gt: int | None = Query(default=None),
-        imo_gte: int | None = Query(default=None),
-        imo_lte: int | None = Query(default=None),
-        imo_lt: int | None = Query(default=None),
-        a_in: list[int] | None = Query(default=None),
-        a_nin: list[int] | None = Query(default=None),
-        a_gt: int | None = Query(default=None),
-        a_gte: int | None = Query(default=None),
-        a_lte: int | None = Query(default=None),
-        a_lt: int | None = Query(default=None),
-        b_in: list[int] | None = Query(default=None),
-        b_nin: list[int] | None = Query(default=None),
-        b_gt: int | None = Query(default=None),
-        b_gte: int | None = Query(default=None),
-        b_lte: int | None = Query(default=None),
-        b_lt: int | None = Query(default=None),
-        c_in: list[int] | None = Query(default=None),
-        c_nin: list[int] | None = Query(default=None),
-        c_gt: int | None = Query(default=None),
-        c_gte: int | None = Query(default=None),
-        c_lte: int | None = Query(default=None),
-        c_lt: int | None = Query(default=None),
-        d_in: list[int] | None = Query(default=None),
-        d_nin: list[int] | None = Query(default=None),
-        d_gt: int | None = Query(default=None),
-        d_gte: int | None = Query(default=None),
-        d_lte: int | None = Query(default=None),
-        d_lt: int | None = Query(default=None),
-        name_in: list[str] | None = Query(default=None),
-        name_nin: list[str] | None = Query(default=None),
-        callsign_in: list[str] | None = Query(default=None),
-        callsign_nin: list[str] | None = Query(default=None),
-        location_system_type_in: list[str] | None = Query(default=None),
-        location_system_type_nin: list[str] | None = Query(default=None),
-        flag_region_in: list[str] | None = Query(default=None),
-        flag_region_nin: list[str] | None = Query(default=None),
-        flag_state_in: list[str] | None = Query(default=None),
-        flag_state_nin: list[str] | None = Query(default=None),
+        mmsi_in: list[int] | None = Query(default=None,
+                                          description="Filter for ships with specified MMSIs"),
+        mmsi_nin: list[int] | None = Query(default=None,
+                                           description="Filter for ships without specified MMSIs"),
+        mmsi_gt: int | None = Query(default=None,
+                                    description="Filter for ships with a MMSI greater than the given value"),
+        mmsi_gte: int | None = Query(default=None,
+                                     description="Filter for ships with a MMSI greater than or equal to the given"
+                                                 " value"),
+        mmsi_lte: int | None = Query(default=None,
+                                     description="Filter for ships with a MMSI less than or equal to the given value"),
+        mmsi_lt: int | None = Query(default=None,
+                                    description="Filter for ships with a MMSI less than the given value"),
+        mid_in: list[int] | None = Query(default=None,
+                                         description="Filter for ships with specified MIDs"),
+        mid_nin: list[int] | None = Query(default=None,
+                                          description="Filter for ships without specified MIDs"),
+        mid_gt: int | None = Query(default=None,
+                                   description="Filter for ships with a MID greater than the given value"),
+        mid_gte: int | None = Query(default=None,
+                                    description="Filter for ships with a MID greater than or equal to the given value"),
+        mid_lte: int | None = Query(default=None,
+                                    description="Filter for ships with a MID less than or equal to the given value"),
+        mid_lt: int | None = Query(default=None,
+                                   description="Filter for ships with a MID less than the given value"),
+        imo_in: list[int] | None = Query(default=None,
+                                         description="Filter for ships with specified IMOs"),
+        imo_nin: list[int] | None = Query(default=None,
+                                          description="Filter for ships without specified IMOs"),
+        imo_gt: int | None = Query(default=None,
+                                   description="Filter for ships with a IMO greater than the given value"),
+        imo_gte: int | None = Query(default=None,
+                                    description="Filter for ships with a IMO greater than or equal to the given value"),
+        imo_lte: int | None = Query(default=None,
+                                    description="Filter for ships with a IMO less than or equal to the given value"),
+        imo_lt: int | None = Query(default=None,
+                                   description="Filter for ships with a IMO less than the given value"),
+        a_in: list[int] | None = Query(default=None,
+                                       description="Filter for ships with specified A values"),
+        a_nin: list[int] | None = Query(default=None,
+                                        description="Filter for ships without specified A values"),
+        a_gt: int | None = Query(default=None,
+                                 description="Filter for ships with a A greater than the given value"),
+        a_gte: int | None = Query(default=None,
+                                  description="Filter for ships with a A greater than or equal to the given value"),
+        a_lte: int | None = Query(default=None,
+                                  description="Filter for ships with a A less than or equal to the given value"),
+        a_lt: int | None = Query(default=None,
+                                 description="Filter for ships with a A less than the given value"),
+        b_in: list[int] | None = Query(default=None,
+                                       description="Filter for ships with specified B values"),
+        b_nin: list[int] | None = Query(default=None,
+                                        description="Filter for ships without specified B values"),
+        b_gt: int | None = Query(default=None,
+                                 description="Filter for ships with a B greater than the given value"),
+        b_gte: int | None = Query(default=None,
+                                  description="Filter for ships with a B greater than or equal to the given value"),
+        b_lte: int | None = Query(default=None,
+                                  description="Filter for ships with a B less than or equal to the given value"),
+        b_lt: int | None = Query(default=None,
+                                 description="Filter for ships with a B less than the given value"),
+        c_in: list[int] | None = Query(default=None,
+                                       description="Filter for ships with specified C values"),
+        c_nin: list[int] | None = Query(default=None,
+                                        description="Filter for ships without specified C values"),
+        c_gt: int | None = Query(default=None,
+                                 description="Filter for ships with a C greater than the given value"),
+        c_gte: int | None = Query(default=None,
+                                  description="Filter for ships with a C greater than or equal to the given value"),
+        c_lte: int | None = Query(default=None,
+                                  description="Filter for ships with a C less than or equal to the given value"),
+        c_lt: int | None = Query(default=None,
+                                 description="Filter for ships with a C less than the given value"),
+        d_in: list[int] | None = Query(default=None,
+                                       description="Filter for ships with specified D values"),
+        d_nin: list[int] | None = Query(default=None,
+                                        description="Filter for ships without specified D values"),
+        d_gt: int | None = Query(default=None,
+                                 description="Filter for ships with a D greater than the given value"),
+        d_gte: int | None = Query(default=None,
+                                  description="Filter for ships with a D greater than or equal to the given value"),
+        d_lte: int | None = Query(default=None,
+                                  description="Filter for ships with a D less than or equal to the given value"),
+        d_lt: int | None = Query(default=None,
+                                 description="Filter for ships with a D less than the given value"),
+        name_in: list[str] | None = Query(default=None,
+                                          description="Filter for ships with specified names"),
+        name_nin: list[str] | None = Query(default=None,
+                                           description="Filter for ships without specified names"),
+        callsign_in: list[str] | None = Query(default=None,
+                                              description="Filter for ships with specified callsigns"),
+        callsign_nin: list[str] | None = Query(default=None,
+                                               description="Filter for ships without specified callsigns"),
+        location_system_type_in: list[str] | None = Query(default=None,
+                                                          description="Filter for ships with specified location "
+                                                                      "systems"),
+        location_system_type_nin: list[str] | None = Query(default=None,
+                                                           description="Filter for ships without specified location "
+                                                                       "systems"),
+        flag_region_in: list[str] | None = Query(default=None,
+                                                 description="Filter for ships with specified flag regions"),
+        flag_region_nin: list[str] | None = Query(default=None,
+                                                  description="Filter for ships without specified flag regions"),
+        flag_state_in: list[str] | None = Query(default=None,
+                                                description="Filter for ships with specified flag states"),
+        flag_state_nin: list[str] | None = Query(default=None,
+                                                 description="Filter for ships without specified flag states"),
 
         # Filters for ship type
-        mobile_type_in: list[MobileType] | None = Query(default=None),
-        mobile_type_nin: list[MobileType] | None = Query(default=None),
-        ship_type_in: list[ShipType] | None = Query(default=None),
-        ship_type_nin: list[ShipType] | None = Query(default=None),
+        mobile_type_in: list[MobileType] | None = Query(default=None,
+                                                        description="Filter for ships with specified mobile types"),
+        mobile_type_nin: list[MobileType] | None = Query(default=None,
+                                                         description="Filter for ships without specified mobile types"),
+        ship_type_in: list[ShipType] | None = Query(default=None,
+                                                    description="Filter for ships with specified ship types"),
+        ship_type_nin: list[ShipType] | None = Query(default=None,
+                                                     description="Filter for ships without specified ship types"),
+        # Search method
+        search_method: SearchMethodSpatial = Query(default="cell_1000m",
+                                                   description="Determines the search method used to find ships when "
+                                                               "using spatial or temporal filters"),
         # Temporal bounds
-        from_datetime: datetime.datetime = Query(default=None, example="2021-01-01T00:00:00Z"),
-        to_datetime: datetime.datetime = Query(default=None),
+        from_datetime: datetime.datetime = Query(default=None,
+                                                 example="2021-01-01T00:00:00Z",
+                                                 description="Filter for ships with a first position after or at the "
+                                                             "given datetime"),
+        to_datetime: datetime.datetime = Query(default=None,
+                                               description="Filter for ships with a last position before or at the "
+                                                           "given datetime"),
         # Spatial bounds
-        search_method: SearchMethodSpatial = Query(default="cell_1000m"),
-        min_x: int = Query(default=None),
-        min_y: int = Query(default=None),
-        max_x: int = Query(default=None),
-        max_y: int = Query(default=None),
-        # Data warehouse Session
+        min_x: int = Query(default=None,
+                           description="Filter for ships with a first position with a longitude greater than or equal "
+                                       "to the given value"),
+        min_y: int = Query(default=None,
+                           description="Filter for ships with a first position with a latitude greater than or equal "
+                                       "to the given value"),
+        max_x: int = Query(default=None,
+                           description="Filter for ships with a first position with a longitude less than or equal "
+                                       "to the given value"),
+        max_y: int = Query(default=None,
+                           description="Filter for ships with a first position with a latitude less than or equal "
+                                       "to the given value"),
+        # The data warehouse Session
         dw: Session = Depends(get_dw)
 ):
-    """
-    Return a dictionary with information about a specific ship or a set of ships.
-
-    Args:
-
-        skip (int, optional): Number of records to skip. Defaults to 0.
-        limit (int, optional): Number of records to return. Defaults to 10.
-
-        ship_id (int, optional): ID of the ship to return. Defaults to None.
-
-        The following parameters can be filtered with the following operators: in, nin, gt, gte, lte, lt.
-        mmsi_(filter) (list[int], int, optional): MMSI of the ship.
-        mid_(filter) (list[int], int, optional): MID of the ship.
-        imo_(filter) (list[int], int, optional): IMO of the ship.
-        a_(filter) (list[int], int, optional): Distance from the transponder to the bow of the ship.
-        b_(filter) (list[int], int, optional): Distance from the transponder to the stern of the ship.
-        c_(filter) (list[int], int, optional): Distance from the transponder to the port side of the ship.
-        d_(filter) (list[int], int, optional): Distance from the transponder to the starboard side of the ship.
-
-        The following parameters can be filtered with the following operators: in, nin.
-        name_(filter) (list[str], optional): Name of the ship.
-        callsign_(filter) (list[str], optional): Callsign of the ship.
-        location_system_type_(filter) (list[str], optional): Location system type of the ship.
-        flag_region_(filter) (list[str], optional): Flag region of the ship.
-        flag_state_(filter) (list[str], optional): Flag state of the ship.
-        mobile_type_(filter) (list[str], optional): Mobile type of the ship.
-        ship_type_(filter) (list[str], optional): Ship type of the ship.
-
-        from_datetime (datetime.datetime, optional): Start date of the temporal filter. Defaults to None.
-        to_datetime (datetime.datetime, optional): End date of the temporal filter. Defaults to None.
-        Example: from_datetime=2021-01-01T00:00:00Z&to_datetime=2022-01-01T00:00:00Z
-
-        search_method (enumerate): Spatial search method. Defaults to "cell_1000m".
-        min_x (int, optional): Minimum x coordinate of the spatial filter. Defaults to None.
-        min_y (int, optional): Minimum y coordinate of the spatial filter. Defaults to None.
-        max_x (int, optional): Maximum x coordinate of the spatial filter. Defaults to None.
-        max_y (int, optional): Maximum y coordinate of the spatial filter. Defaults to None.
-
-
-    Returns:
-
-        dict: Dictionary with information about a specific ship or a set of ships.
-    """  # noqa: D412
+    """Return a dictionary containing information ships, filtered by the given parameters."""
     # Query builder instantiated and ship select statement added to query
     qb = QueryBuilder(SQL_PATH)
 
@@ -194,8 +228,8 @@ async def ships(  # noqa: C901
         qb.add_sql("from_trajectory.sql")
         if spatial_bounds:
             qb.add_string("JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id")
-            qb.add_where_from_string("st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), "
-                                     "st_transform(dt.trajectory::geometry, 3034))")
+            qb.add_where_from_string("st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
+                                     "dt.trajectory::geometry)")
         if temporal_bounds:
             temporal_attribute = "ft.start_date_id"
             add_temporal_filter(qb, temporal_attribute, temporal_params)
@@ -258,10 +292,10 @@ async def ships(  # noqa: C901
             param_name = key.rsplit("_", 1)[0]
             qb.add_where("dst." + param_name, qb.get_sql_operator(key), value, params)
 
-    # Statements for order by, offset and limit
-    qb.add_sql("order_limit_offset.sql")
+    # Statements for order by, offset and limit is added to the query
+    qb.add_string("ORDER BY ds.ship_id LIMIT :limit OFFSET :offset;")
 
-    # Finally, replace all placeholders in the query, then collect the query string and return the response
+    # Finally, format all placeholders in the query, then collect the query string and return the response
     qb.format_query(placeholders)
     final_query = qb.get_query_str()
     return response(final_query, dw, params)
