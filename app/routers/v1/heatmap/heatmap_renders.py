@@ -81,7 +81,7 @@ def geo_tiff_to_png(
     with MemoryFile(geo_tiff_bytes) as memfile:
         with memfile.open() as raster:
             fig, ax = plt.subplots(dpi=200, layout='tight')
-            # fig.set_dpi(dpi)  # set the dpi of the figure
+
             show(
                 satellite,
                 ax=ax,
