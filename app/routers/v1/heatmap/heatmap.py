@@ -129,7 +129,10 @@ def single_heatmap(
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes())
+        png, image_time_taken_sec = try_get_png_from_geotiff(
+            result[0].tobytes(),
+            title=f"{heatmap_type.value} {start.strftime('%Y-%m-%d')} - {end.strftime('%Y-%m-%d')}"
+        )
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
                                      'Query-Time': str(query_time_taken_sec),
@@ -141,7 +144,7 @@ def single_heatmap(
                              )
 
 
-def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
+def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False, title=None):
     """
     Measure time of converting geotiff to png, and reraise the ValueError as HTTPException.
 
@@ -151,7 +154,7 @@ def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
     """
     try:
         png, image_time_taken_sec = \
-            measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
+            measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative, title=title).read())
     except ValueError as e:
         if "vmin == vmax" in str(e):
             raise HTTPException(404, "No heatmap data found given the parameters.")
