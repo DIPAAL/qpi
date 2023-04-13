@@ -189,11 +189,6 @@ async def ships(  # noqa: C901
     # This part of the query also determines what the output for the client will be.
     qb.add_sql("select_ship.sql")
 
-    # If ship_id is provided, only one ship can be found, done by a simple query.
-    if ship_id:
-        qb.add_sql("ship_by_id.sql")
-        return response(qb.get_query_str(), dw, {"id": ship_id})
-
     # Setup of spatial bounds if provided
     spatial_params = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
     spatial_bounds = True if any(value is not None for value in spatial_params.values()) else False
