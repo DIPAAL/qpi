@@ -275,17 +275,9 @@ async def ships(  # noqa: C901
         "ship_type_nin": get_values_from_enum_list(ship_type_nin, ShipType)
     }
 
-    # If there are ship filters, add the appropriate where statement(s) to query
-    for key, value in filter_params_ship.items():
-        if value:
-            param_name = key.rsplit("_", 1)[0]
-            qb.add_where("ds." + param_name, qb.get_sql_operator(key), value, params)
-
-    # If there are ship type filters, add the appropriate where statement(s) to query
-    for key, value in filter_params_ship_type.items():
-        if value:
-            param_name = key.rsplit("_", 1)[0]
-            qb.add_where("dst." + param_name, qb.get_sql_operator(key), value, params)
+    # Add filters to the query builder query and params dict
+    filters_to_query_and_param(qb, "ds.", filter_params_ship, params)
+    filters_to_query_and_param(qb, "dst.", filter_params_ship_type, params)
 
     # Statements for order by, offset and limit is added to the query
     qb.add_string("ORDER BY ds.ship_id LIMIT :limit OFFSET :offset;")
@@ -295,6 +287,13 @@ async def ships(  # noqa: C901
     final_query = qb.get_query_str()
     return response(final_query, dw, params)
 
+
+def filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict):
+    """Add filters to the query builder from the given parameters and add the parameters to the params dict. """
+    for key, value in filter_params.items():
+        if value: # Only add the filter if the parameter has a value
+            param_name = key.rsplit("_", 1)[0]
+            qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
 
 def add_temporal_filter(qb: QueryBuilder, temporal_attribute: str, temporal_params: dict):
     """
