@@ -30,7 +30,13 @@ def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title: str, max_value: float
     return imageio.imread(geo_tiff_to_png(geo_tiff_bytes, title=title, max_value=max_value))
 
 
-def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, max_value: float = None):
+def geo_tiffs_to_video(
+        rasters: List[Tuple[str, io.BytesIO]],
+        fps: int,
+        format: str,
+        title_prefix: str,
+        max_value: float = None
+):
     """
     Create a video from a list of GeoTIFFs.
 
@@ -41,7 +47,10 @@ def geo_tiffs_to_video(rasters: List[Tuple[str, io.BytesIO]], fps, format: str, 
         max_value: max value for the heatmap
     """
     with multiprocessing.Pool() as pool:
-        frames = pool.starmap(geo_tiff_to_imageio, [(raster, title, max_value) for title, raster in rasters])
+        frames = pool.starmap(
+            geo_tiff_to_imageio,
+            [(raster, f"{title_prefix} - {title}", max_value) for title, raster in rasters]
+        )
 
     frames = np.array(frames)
 

@@ -289,7 +289,11 @@ def mapalgebra_heatmap(
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes(), True)
+        png, image_time_taken_sec = try_get_png_from_geotiff(
+            result[0].tobytes(),
+            can_be_negative=True,
+            title=f"{heatmap_type.value} - custom map algebra"
+        )
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
                                      'Query-Time': str(query_time_taken_sec),
@@ -363,7 +367,9 @@ def multi_heatmap(
 
     result = [(r[0], r[1].tobytes()) for r in result]
 
-    video, image_time_taken_sec = measure_time(lambda: geo_tiffs_to_video(result, fps, output_format.value, max_value))
+    video, image_time_taken_sec = measure_time(
+        lambda: geo_tiffs_to_video(result, fps, output_format.value, heatmap_type.value, max_value)
+    )
 
     media_type = f"video/{output_format.value}"
     if output_format == MultiOutputFormat.gif:
