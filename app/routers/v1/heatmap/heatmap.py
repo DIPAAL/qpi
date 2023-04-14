@@ -1,4 +1,6 @@
 """Router for all endpoints related to heatmaps."""
+import io
+
 import datetime
 import os
 
@@ -129,7 +131,10 @@ def single_heatmap(
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes())
+        png, image_time_taken_sec = try_get_png_from_geotiff(
+            result[0].tobytes(),
+            title=f"{heatmap_type.value} {start.strftime('%Y-%m-%d')} - {end.strftime('%Y-%m-%d')}"
+        )
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
                                      'Query-Time': str(query_time_taken_sec),
@@ -141,17 +146,19 @@ def single_heatmap(
                              )
 
 
-def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False):
+def try_get_png_from_geotiff(geo_tiff_bytes: io.BytesIO, can_be_negative: bool = False, title: str = None)\
+        -> (io.BytesIO, float):
     """
     Measure time of converting geotiff to png, and reraise the ValueError as HTTPException.
 
     Keyword arguments:
         geo_tiff_bytes: binary representation of geotiff
         can_be_negative: whether the geotiff can be negative, i.e. whether a colormap should support negative values.
+        title: title of the heatmap to be rendered
     """
     try:
         png, image_time_taken_sec = \
-            measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative).read())
+            measure_time(lambda: geo_tiff_to_png(geo_tiff_bytes, can_be_negative=can_be_negative, title=title).read())
     except ValueError as e:
         if "vmin == vmax" in str(e):
             raise HTTPException(404, "No heatmap data found given the parameters.")
@@ -286,7 +293,11 @@ def mapalgebra_heatmap(
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     if output_format == SingleOutputFormat.png:
-        png, image_time_taken_sec = try_get_png_from_geotiff(result[0].tobytes(), True)
+        png, image_time_taken_sec = try_get_png_from_geotiff(
+            result[0].tobytes(),
+            can_be_negative=True,
+            title=f"{heatmap_type.value} - custom map algebra"
+        )
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
                                      'Query-Time': str(query_time_taken_sec),
@@ -360,7 +371,9 @@ def multi_heatmap(
 
     result = [(r[0], r[1].tobytes()) for r in result]
 
-    video, image_time_taken_sec = measure_time(lambda: geo_tiffs_to_video(result, fps, output_format.value, max_value))
+    video, image_time_taken_sec = measure_time(
+        lambda: geo_tiffs_to_video(result, fps, output_format.value, heatmap_type.value, max_value)
+    )
 
     media_type = f"video/{output_format.value}"
     if output_format == MultiOutputFormat.gif:
