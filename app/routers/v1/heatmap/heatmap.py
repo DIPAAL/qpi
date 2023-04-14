@@ -146,7 +146,8 @@ def single_heatmap(
                              )
 
 
-def try_get_png_from_geotiff(geo_tiff_bytes: io.BytesIO, can_be_negative: bool = False, title: str = None):
+def try_get_png_from_geotiff(geo_tiff_bytes: io.BytesIO, can_be_negative: bool = False, title: str = None)\
+        -> (io.BytesIO, float):
     """
     Measure time of converting geotiff to png, and reraise the ValueError as HTTPException.
 

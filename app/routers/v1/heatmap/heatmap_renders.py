@@ -36,7 +36,7 @@ def geo_tiffs_to_video(
         format: str,
         title_prefix: str,
         max_value: float = None
-):
+) -> io.BytesIO:
     """
     Create a video from a list of GeoTIFFs.
 
