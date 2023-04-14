@@ -153,6 +153,7 @@ def try_get_png_from_geotiff(geo_tiff_bytes: io.BytesIO, can_be_negative: bool =
     Keyword arguments:
         geo_tiff_bytes: binary representation of geotiff
         can_be_negative: whether the geotiff can be negative, i.e. whether a colormap should support negative values.
+        title: title of the heatmap to be rendered
     """
     try:
         png, image_time_taken_sec = \
