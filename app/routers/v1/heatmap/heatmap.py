@@ -1,4 +1,6 @@
 """Router for all endpoints related to heatmaps."""
+import io
+
 import datetime
 import os
 
@@ -144,7 +146,7 @@ def single_heatmap(
                              )
 
 
-def try_get_png_from_geotiff(geo_tiff_bytes, can_be_negative=False, title=None):
+def try_get_png_from_geotiff(geo_tiff_bytes: io.BytesIO, can_be_negative: bool = False, title: str = None):
     """
     Measure time of converting geotiff to png, and reraise the ValueError as HTTPException.
 

@@ -44,6 +44,7 @@ def geo_tiffs_to_video(
         rasters: list of tuples of (title, GeoTIFF bytes)
         fps: frames per second
         format: output format
+        title_prefix: prefix for the title of each frame
         max_value: max value for the heatmap
     """
     with multiprocessing.Pool() as pool:
