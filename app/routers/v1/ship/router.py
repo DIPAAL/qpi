@@ -286,6 +286,7 @@ def add_cell_from_where_clause_to_query(qb, placeholders, search_method, spatial
         qb.add_where_from_file("stbox_spatialtemporal.sql")
         placeholders.update({"RELATION_STBOX": "fc"})
     elif temporal_bounds:
+
         temporal_attribute = "fc.entry_date_id"
         add_temporal_filter(qb, temporal_attribute, temporal_params)
     elif spatial_bounds:
