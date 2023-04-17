@@ -348,6 +348,6 @@ async def mmsi(
     Although MMSI is supposed to be a unique identifier, there are some cases where ships share the same MMSI.
     In such cases a set of ships is returned.
     """
-    qb = QueryBuilder()
+    qb = QueryBuilder(SQL_PATH)
     qb.add_sql("ship_by_mmsi.sql")
     return response(qb.get_query_str(), dw, {"mmsi": mmsi})
