@@ -267,7 +267,7 @@ async def ships(  # noqa: C901
 
 
 def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds, temporal_params):
-    """Add the from and where clauses for the trajectory search method to the query builder"""
+    """Add the FROM and WHERE clauses for the trajectory search method to the query builder"""
     qb.add_sql("from_trajectory.sql")
     if spatial_bounds:
         qb.add_string("JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id")
@@ -279,7 +279,7 @@ def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bound
 
 
 def add_cell_from_where_clause_to_query(qb, placeholders, search_method, spatial_bounds, temporal_bounds, temporal_params):
-    """Add the from and where clauses for the cell search method to the query builder"""
+    """Add the FROM and WHERE clauses for the cell search method to the query builder and update the placeholders"""
     qb.add_sql("from_cell.sql")
     placeholders.update({"CELL_SIZE": search_method.value})
     if temporal_bounds and spatial_bounds:
