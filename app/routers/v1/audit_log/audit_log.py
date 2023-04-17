@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends
 
 from app.dependencies import get_dw
-from app.routers.v1.audit_log.model.audit_log import AuditLog
+from app.schemas.audit_log import AuditLog
 
 router = APIRouter()
 
