@@ -11,11 +11,14 @@ dates = [
     ("2021-06-05T00:22:01Z", "to", 20210605, 2201, "to_date", "to_time"),
     ("2020-12-26T12:22:06Z", "from", 20201226, 122206, "from_date", "from_time"),
     ("2020-12-26T12:22:06Z", "to", 20201226, 122206, "to_date", "to_time"),
+    (None, "from", None, None, "from_date", "from_time")
 ]
 
 @pytest.mark.parametrize("datetime_input, from_or_to, exp_date, exp_time, date_key, time_key", dates)
 def test_update_params_datetime(datetime_input, from_or_to, exp_date, exp_time, date_key, time_key):
     params = {}
-    datetime_input = datetime.datetime.fromisoformat(datetime_input)
+    if datetime_input:
+        datetime_input = datetime.datetime.fromisoformat(datetime_input)
     update_params_datetime(params, datetime_input, from_or_to)
     assert params == {date_key: exp_date, time_key: exp_time}
+

@@ -23,7 +23,7 @@ SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 async def ships(  # noqa: C901
         # Pagination
         offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
-        limit: int = Query(default=100, description="Limit the number of ships returned by the request to X"),
+        limit: int = Query(default=10, description="Limit the number of ships returned by the request to X"),
         # Filter for a specific ship
         ship_id: int | None = Query(default=None,
                                     description="Filter for a specific ship by its ID in the fact_ship relation"),
@@ -197,23 +197,13 @@ async def ships(  # noqa: C901
         raise HTTPException(status_code=400, detail="Spatial bounds not complete")
     params.update(spatial_params)
 
-    # TODO: Use new function to update temporal params
     # Setup of temporal bounds if provided
     temporal_params = {}
 
-    if from_datetime:
-        temporal_params.update({
-            "from_date": int(from_datetime.strftime("%Y%m%d")),
-            "from_time": int(from_datetime.strftime("%H%M%S"))
-        })
-    if to_datetime:
-        temporal_params.update({
-            "to_date": int(to_datetime.strftime("%Y%m%d")),
-            "to_time": int(to_datetime.strftime("%H%M%S")),
-        })
+    update_params_datetime(temporal_params, from_datetime, "from")
+    update_params_datetime(temporal_params, to_datetime, "to")
 
-    params.update(temporal_params)
-    temporal_bounds = True if any(value is not None for value in temporal_params.values()) else False
+    temporal_bounds = True if temporal_params else False
 
     # From and where statements added to query, depending on search method and temporal/spatial bounds
     # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
@@ -221,26 +211,13 @@ async def ships(  # noqa: C901
         qb.add_sql("from_ship.sql")
 
     elif search_method == SearchMethodSpatial.trajectories:
-        qb.add_sql("from_trajectory.sql")
-        if spatial_bounds:
-            qb.add_string("JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id")
-            qb.add_where_from_string("st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
-                                     "dt.trajectory::geometry)")
-        if temporal_bounds:
-            temporal_attribute = "ft.start_date_id"
-            add_temporal_filter(qb, temporal_attribute, temporal_params)
+        add_trajectory_from_where_clause_to_query(qb,
+                                                  spatial_bounds, temporal_bounds, temporal_params)
 
     elif "cell" in search_method.value:
-        qb.add_sql("from_cell.sql")
-        placeholders.update({"CELL_SIZE": search_method.value})
-        if temporal_bounds and spatial_bounds:
-            qb.add_where_from_file("stbox_spatialtemporal.sql")
-            placeholders.update({"RELATION_STBOX": "fc"})
-        elif temporal_bounds:
-            temporal_attribute = "fc.entry_date_id"
-            add_temporal_filter(qb, temporal_attribute, temporal_params)
-        elif spatial_bounds:
-            qb.add_where_from_string("ST_CONTAINS(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)")
+        add_cell_from_where_clause_to_query(qb, placeholders, search_method,
+                                            spatial_bounds, temporal_bounds, temporal_params)
+
     else:
         raise HTTPException(status_code=400, detail="Search method not supported")
 
@@ -277,8 +254,8 @@ async def ships(  # noqa: C901
     }
 
     # Add filters to the query builder query and params dict
-    filters_to_query_and_param(qb, "ds.", filter_params_ship, params)
-    filters_to_query_and_param(qb, "dst.", filter_params_ship_type, params)
+    add_filters_to_query_and_param(qb, "ds.", filter_params_ship, params)
+    add_filters_to_query_and_param(qb, "dst.", filter_params_ship_type, params)
 
     # Statements for order by, offset and limit is added to the query
     qb.add_string("ORDER BY ds.ship_id LIMIT :limit OFFSET :offset;")
@@ -289,8 +266,34 @@ async def ships(  # noqa: C901
     return response(final_query, dw, params)
 
 
+def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds, temporal_params):
+    """Add the from and where clauses for the trajectory search method to the query builder"""
+    qb.add_sql("from_trajectory.sql")
+    if spatial_bounds:
+        qb.add_string("JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id")
+        qb.add_where_from_string("st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
+                                 "dt.trajectory::geometry)")
+    if temporal_bounds:
+        temporal_attribute = "ft.start_date_id"
+        add_temporal_filter(qb, temporal_attribute, temporal_params)
+
+
+def add_cell_from_where_clause_to_query(qb, placeholders, search_method, spatial_bounds, temporal_bounds, temporal_params):
+    """Add the from and where clauses for the cell search method to the query builder"""
+    qb.add_sql("from_cell.sql")
+    placeholders.update({"CELL_SIZE": search_method.value})
+    if temporal_bounds and spatial_bounds:
+        qb.add_where_from_file("stbox_spatialtemporal.sql")
+        placeholders.update({"RELATION_STBOX": "fc"})
+    elif temporal_bounds:
+        temporal_attribute = "fc.entry_date_id"
+        add_temporal_filter(qb, temporal_attribute, temporal_params)
+    elif spatial_bounds:
+        qb.add_where_from_string("ST_CONTAINS(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)")
+
+
 def update_params_datetime(param_dict: dict, parameter: datetime, from_or_to: str):
-    """Update the given parameter dict with the given parameters. """
+    """Update the given parameter dict with the given parameters """
     if parameter:
         if from_or_to == "from":
             param_dict.update({
@@ -302,10 +305,8 @@ def update_params_datetime(param_dict: dict, parameter: datetime, from_or_to: st
                 "to_date": int(parameter.strftime("%Y%m%d")),
                 "to_time": int(parameter.strftime("%H%M%S")),
             })
-        return True
-    return False
 
-def filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict):
+def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict):
     """Add filters to the query builder from the given parameters and add the parameters to the params dict. """
     for key, value in filter_params.items():
         if value: # Only add the filter if the parameter has a value
