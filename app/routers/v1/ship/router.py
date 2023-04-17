@@ -197,6 +197,7 @@ async def ships(  # noqa: C901
         raise HTTPException(status_code=400, detail="Spatial bounds not complete")
     params.update(spatial_params)
 
+    # TODO: Use new function to update temporal params
     # Setup of temporal bounds if provided
     temporal_params = {}
 
@@ -212,7 +213,7 @@ async def ships(  # noqa: C901
         })
 
     params.update(temporal_params)
-    temporal_bounds = True if any(temporal_params) else False
+    temporal_bounds = True if any(value is not None for value in temporal_params.values()) else False
 
     # From and where statements added to query, depending on search method and temporal/spatial bounds
     # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
@@ -287,6 +288,22 @@ async def ships(  # noqa: C901
     final_query = qb.get_query_str()
     return response(final_query, dw, params)
 
+
+def update_params_datetime(param_dict: dict, parameter: datetime, from_or_to: str):
+    """Update the given parameter dict with the given parameters. """
+    if parameter:
+        if from_or_to == "from":
+            param_dict.update({
+                "from_date": int(parameter.strftime("%Y%m%d")),
+                "from_time": int(parameter.strftime("%H%M%S"))
+            })
+        elif from_or_to == "to":
+            param_dict.update({
+                "to_date": int(parameter.strftime("%Y%m%d")),
+                "to_time": int(parameter.strftime("%H%M%S")),
+            })
+        return True
+    return False
 
 def filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict):
     """Add filters to the query builder from the given parameters and add the parameters to the params dict. """
