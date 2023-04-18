@@ -190,20 +190,26 @@ async def ships(  # noqa: C901
     qb.add_sql("select_ship.sql")
 
     # Setup of spatial bounds if provided
-    spatial_params = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
+    spatial_params: dict = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
     spatial_bounds = True if any(value is not None for value in spatial_params.values()) else False
 
     if spatial_bounds and None in spatial_params.values():
         raise HTTPException(status_code=400, detail="Spatial bounds not complete")
+
     params.update(spatial_params)
 
     # Setup of temporal bounds if provided
-    temporal_params = {}
+    temporal_params: dict = {"from_date": None, "from_time": None, "to_date": None, "to_time": None}
 
     update_params_datetime(temporal_params, from_datetime, "from")
     update_params_datetime(temporal_params, to_datetime, "to")
 
-    temporal_bounds = True if temporal_params else False
+    temporal_bounds = True if any(value is not None for value in temporal_params.values()) else False
+
+    # Default to min and max datetime if only one is provided
+    update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, from_datetime, to_datetime)
+
+    params.update(temporal_params)
 
     # From and where statements added to query, depending on search method and temporal/spatial bounds
     # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
@@ -266,35 +272,50 @@ async def ships(  # noqa: C901
     return response(final_query, dw, params)
 
 
+def update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, from_datetime, to_datetime):
+    """Update the temporal parameters to min and max datetime if only one is provided."""
+    if temporal_bounds and None in temporal_params.values():
+        if from_datetime is None:
+            temporal_params["from_date"] = datetime.datetime.min.strftime("%Y%m%d")
+            temporal_params["from_time"] = datetime.datetime.min.strftime("%H%M%S")
+        elif to_datetime is None:
+            temporal_params["to_date"] = datetime.datetime.max.strftime("%Y%m%d")
+            temporal_params["to_time"] = datetime.datetime.max.strftime("%H%M%S")
+
+
 def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds, temporal_params):
-    """Add the FROM and WHERE clauses for the trajectory search method to the query builder"""
+    """Add the FROM and WHERE clauses for the trajectory search method to the query builder."""
     qb.add_sql("from_trajectory.sql")
-    if spatial_bounds:
-        qb.add_string("JOIN dim_trajectory dt ON ft.trajectory_sub_id = dt.trajectory_sub_id")
-        qb.add_where_from_string("st_intersects(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
-                                 "dt.trajectory::geometry)")
-    if temporal_bounds:
-        temporal_attribute = "ft.start_date_id"
-        add_temporal_filter(qb, temporal_attribute, temporal_params)
+    if temporal_bounds and spatial_bounds:
+        qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
+                                 "span(timestamp_from_date_time_id(:from_date, :from_time), "
+                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && dt.trajectory")
+    elif spatial_bounds:
+        qb.add_where_from_string("WHERE STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326)) && dt.trajectory")
+
+    elif temporal_bounds:
+        qb.add_where_from_string("STBOX(span(timestamp_from_date_time_id(:from_date, :from_time), "
+                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && dt.trajectory")
 
 
-def add_cell_from_where_clause_to_query(qb, placeholders, search_method, spatial_bounds, temporal_bounds, temporal_params):
-    """Add the FROM and WHERE clauses for the cell search method to the query builder and update the placeholders"""
+def add_cell_from_where_clause_to_query(qb, placeholders, search_method,
+                                        spatial_bounds, temporal_bounds, temporal_params):
+    """Add the FROM and WHERE clauses for the cell search method to the query builder and update the placeholders."""
     qb.add_sql("from_cell.sql")
     placeholders.update({"CELL_SIZE": search_method.value})
     if temporal_bounds and spatial_bounds:
-        qb.add_where_from_file("stbox_spatialtemporal.sql")
-        placeholders.update({"RELATION_STBOX": "fc"})
+        qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), "
+                                 "span(timestamp_from_date_time_id(:from_date, :from_time), "
+                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && fc.st_bounding_box")
     elif temporal_bounds:
-
-        temporal_attribute = "fc.entry_date_id"
-        add_temporal_filter(qb, temporal_attribute, temporal_params)
+        qb.add_where_from_string("STBOX(span(timestamp_from_date_time_id(:from_date, :from_time), "
+                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && fc.st_bounding_box")
     elif spatial_bounds:
-        qb.add_where_from_string("ST_CONTAINS(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), dc.geom)")
+        qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034)) && fc.st_bounding_box")
 
 
 def update_params_datetime(param_dict: dict, parameter: datetime, from_or_to: str):
-    """Update the given parameter dict with the given parameters """
+    """Update the given parameter dict with the given parameters."""
     if parameter:
         if from_or_to == "from":
             param_dict.update({
@@ -307,26 +328,13 @@ def update_params_datetime(param_dict: dict, parameter: datetime, from_or_to: st
                 "to_time": int(parameter.strftime("%H%M%S")),
             })
 
+
 def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict):
-    """Add filters to the query builder from the given parameters and add the parameters to the params dict. """
+    """Add filters to the query builder from the given parameters and add the parameters to the params dict."""
     for key, value in filter_params.items():
-        if value: # Only add the filter if the parameter has a value
+        if value:  # Only add the filter if the parameter has a value
             param_name = key.rsplit("_", 1)[0]
             qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
-
-def add_temporal_filter(qb: QueryBuilder, temporal_attribute: str, temporal_params: dict):
-    """
-    Add a temporal filter to the query builder.
-
-    Returns: The query builder with the temporal filters added.
-    """
-    if temporal_params["from_date"] and temporal_params["from_time"]:
-        qb.add_where(temporal_attribute, ">=", temporal_params["from_date"])\
-            .add_where(temporal_attribute, ">=", temporal_params["from_time"])
-    if temporal_params["to_date"] and temporal_params["to_time"]:
-        qb.add_where(temporal_attribute, "<=", temporal_params["to_date"])\
-            .add_where(temporal_attribute, "<=", temporal_params["to_time"])
-    return qb
 
 
 def get_values_from_enum_list(enum_list, enum_type):
@@ -339,17 +347,12 @@ def get_values_from_enum_list(enum_list, enum_type):
         return [enum_type(value).value for value in enum_list]
 
 
-@router.get("/{mmsi}")
-async def mmsi(
-        mmsi: int = Path(..., le=999_999_999, description="The mmsi number of a ship"),
+@router.get("/{ship_id}")
+async def ship_id(
+        ship_id: int = Path(description="The ship ID for a ship in the data warehouse"),
         dw: Session = Depends(get_dw)
 ):
-    """
-    Get information about a ship by MMSI.
-
-    Although MMSI is supposed to be a unique identifier, there are some cases where ships share the same MMSI.
-    In such cases a set of ships is returned.
-    """
+    """Get information about a ship by its ID."""
     qb = QueryBuilder(SQL_PATH)
-    qb.add_sql("ship_by_mmsi.sql")
-    return response(qb.get_query_str(), dw, {"mmsi": mmsi})
+    qb.add_sql("ship_by_id.sql")
+    return response(qb.get_query_str(), dw, {"id": ship_id})

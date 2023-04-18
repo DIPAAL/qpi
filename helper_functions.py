@@ -129,6 +129,8 @@ def get_file_contents(path_from_root: str):
         return f.read()
 
 
+# TODO: Change implementation. Should return a response object,
+#  so that FastAPI can provide a proper response body as an example.
 def response(query: str, dw: Session, params: dict):
     """
     Return a response from a query.

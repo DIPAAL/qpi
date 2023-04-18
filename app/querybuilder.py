@@ -3,7 +3,6 @@ from sqlalchemy import text
 from helper_functions import get_file_contents
 import os
 from typing import Any
-import numbers
 
 
 class QueryBuilder:
@@ -81,14 +80,6 @@ class QueryBuilder:
             QueryBuilder: The query builder object
         """
         self.query += "\n"
-
-        # If the value is a number, then we can trust it is a valid value
-        if isinstance(value, numbers.Number):
-            self._prefix_where_or_and(f"{param_name} {operator} {value}")
-            return self
-
-        if isinstance(param_dict, type(None)):
-            raise ValueError("param_dict must be provided if value is not an int")
 
         # If the value is not a number, then we must create placeholders for the value
         # This is to prevent SQL injection
