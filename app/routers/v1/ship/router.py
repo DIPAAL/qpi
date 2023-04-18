@@ -4,6 +4,7 @@ Ship router.
 Contains endpoints to retrieve information about a specific ship or a set of ships.
 """
 from fastapi import APIRouter, Depends, Path, HTTPException, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from app.querybuilder import QueryBuilder
@@ -173,7 +174,11 @@ async def ships(  # noqa: C901
         # The data warehouse Session
         dw: Session = Depends(get_dw)
 ):
-    """Return a dictionary containing information ships, filtered by the given parameters."""
+    """
+    Return a dictionary containing information ships, filtered by the given parameters.
+
+    Note that when using spatial bounds, the SRID for trajectories is 4326 and for cells 3034.
+    """
     # Query builder instantiated and ship select statement added to query
     qb = QueryBuilder(SQL_PATH)
 
@@ -267,7 +272,7 @@ async def ships(  # noqa: C901
     # Finally, format all placeholders in the query, then collect the query string and return the response
     qb.format_query(placeholders)
     final_query = qb.get_query_str()
-    return response(final_query, dw, params)
+    return JSONResponse(response(final_query, dw, params))
 
 
 def update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, from_datetime, to_datetime):
@@ -353,4 +358,4 @@ async def ship_id(
     """Get information about a ship by its ID."""
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("ship_by_id.sql")
-    return response(qb.get_query_str(), dw, {"id": ship_id})
+    return JSONResponse(response(qb.get_query_str(), dw, {"id": ship_id}))
