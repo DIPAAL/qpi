@@ -351,16 +351,10 @@ def update_params_datetime(param_dict: dict, dt: datetime.datetime, from_or_to: 
          of the temporal bounds.
     """
     if dt:
-        if from_or_to == "from":
-            param_dict.update({
-                "from_date": int(dt.strftime("%Y%m%d")),
-                "from_time": int(dt.strftime("%H%M%S"))
-            })
-        elif from_or_to == "to":
-            param_dict.update({
-                "to_date": int(dt.strftime("%Y%m%d")),
-                "to_time": int(dt.strftime("%H%M%S")),
-            })
+        param_dict.update({
+            f'{from_or_to}_date': int(dt.strftime("%Y%m%d")),
+            f'{from_or_to}_time': int(dt.strftime("%H%M%S"))
+        })
 
 
 def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict) -> None:
