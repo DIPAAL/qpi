@@ -175,7 +175,7 @@ async def ships(  # noqa: C901
         dw: Session = Depends(get_dw)
 ):
     """
-    Return a dictionary containing information ships, filtered by the given parameters.
+    Return a JSON Array containing all ships that match the given filters.
 
     Note that when using spatial bounds, the SRID for trajectories is 4326 and for cells 3034.
     """
@@ -276,7 +276,15 @@ async def ships(  # noqa: C901
 
 
 def update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, from_datetime, to_datetime):
-    """Update the temporal parameters to min and max datetime if only one is provided."""
+    """
+    Update the temporal parameters to min and max datetime if only one is provided.
+
+    Args:
+        temporal_params (dict): The temporal parameters to update.
+        temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
+        from_datetime (datetime): The from datetime.
+        to_datetime (datetime): The to datetime.
+    """
     if temporal_bounds and None in temporal_params.values():
         if from_datetime is None:
             temporal_params["from_date"] = datetime.datetime.min.strftime("%Y%m%d")
@@ -287,7 +295,13 @@ def update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, fro
 
 
 def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds):
-    """Add the FROM and WHERE clauses for the trajectory search method to the query builder."""
+    """
+    Add the FROM and WHERE clauses for the trajectory search method to the query builder.
+
+    qb (QueryBuilder): The query builder to add the clauses to.
+    spatial_bounds (bool): If true, the spatial bounds are added to the WHERE clause.
+    temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
+    """
     qb.add_sql("from_trajectory.sql")
     if temporal_bounds and spatial_bounds:
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
@@ -302,8 +316,17 @@ def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bound
 
 
 def add_cell_from_where_clause_to_query(qb, placeholders, search_method,
-                                        spatial_bounds, temporal_bounds):
-    """Add the FROM and WHERE clauses for the cell search method to the query builder and update the placeholders."""
+                                        spatial_bounds, temporal_bounds) -> None:
+    """
+    Add the FROM and WHERE clauses for the cell search method to the query builder and update the placeholders.
+
+    Args:
+        qb (QueryBuilder): The query builder to add the clauses to.
+        placeholders (dict): The placeholders to update.
+        search_method (SearchMethod): The search method to use. Determines the cell size.
+        spatial_bounds (bool): If true, the spatial bounds are added to the WHERE clause.
+        temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
+    """
     qb.add_sql("from_cell.sql")
     placeholders.update({"CELL_SIZE": search_method.value})
     if temporal_bounds and spatial_bounds:
@@ -317,30 +340,46 @@ def add_cell_from_where_clause_to_query(qb, placeholders, search_method,
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034)) && fc.st_bounding_box")
 
 
-def update_params_datetime(param_dict: dict, parameter: datetime, from_or_to: str):
-    """Update the given parameter dict with the given parameters."""
-    if parameter:
+def update_params_datetime(param_dict: dict, dt: datetime.datetime, from_or_to: str) -> None:
+    """
+    Update the given parameter dict with the given parameters.
+
+    Args:
+        param_dict (dict): The parameter dict to update.
+        dt (datetime): The date and time to update the parameter dict with.
+        from_or_to (str): A string, either "from" or "to" to indicate if the datetime is the upper or lower bound
+         of the temporal bounds.
+    """
+    if dt:
         if from_or_to == "from":
             param_dict.update({
-                "from_date": int(parameter.strftime("%Y%m%d")),
-                "from_time": int(parameter.strftime("%H%M%S"))
+                "from_date": int(dt.strftime("%Y%m%d")),
+                "from_time": int(dt.strftime("%H%M%S"))
             })
         elif from_or_to == "to":
             param_dict.update({
-                "to_date": int(parameter.strftime("%Y%m%d")),
-                "to_time": int(parameter.strftime("%H%M%S")),
+                "to_date": int(dt.strftime("%Y%m%d")),
+                "to_time": int(dt.strftime("%H%M%S")),
             })
 
 
-def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict):
-    """Add filters to the query builder from the given parameters and add the parameters to the params dict."""
+def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict) -> None:
+    """Add filters to the query builder from the given parameters and add the parameters to the params dict.
+
+    FIXME: Better documentation.
+    Args:
+        qb: The query builder object.
+        relation_name: The name of the relation to add the filters to.
+        filter_params: The parameters to add as filters.
+        params: The parameters dict to add the filter parameters to.
+    """
     for key, value in filter_params.items():
         if value:  # Only add the filter if the parameter has a value
             param_name = key.rsplit("_", 1)[0]
             qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
 
 
-def get_values_from_enum_list(enum_list, enum_type):
+def get_values_from_enum_list(enum_list, enum_type) -> list:
     """
     Get the values from an enum list.
 
