@@ -33,11 +33,13 @@ def test_add_string():
 
 def test_add_where():
     QB = QueryBuilder(SQL_PATH)
+    params = {}
     QB.add_string("SELECT * FROM dim_ship LIMIT 10")
-    QB.add_where("ds.ship_id", ">", 2)
-    QB.add_where("ds.ship_id", "<", 5)
+    QB.add_where("ds.ship_id", ">", 2, params)
+    QB.add_where("ds.ship_id", "<", 5, params)
     QB.end_query()
-    assert QB.get_query_str() == "\nSELECT * FROM dim_ship LIMIT 10\nWHERE ds.ship_id > 2\nAND ds.ship_id < 5;"
+    assert QB.get_query_str() == "\nSELECT * FROM dim_ship LIMIT 10\n" \
+                                 "WHERE ds.ship_id > :param0\nAND ds.ship_id < :param1;"
 
 
 def test_add_where_list_to_tuple():
