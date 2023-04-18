@@ -217,12 +217,10 @@ async def ships(  # noqa: C901
         qb.add_sql("from_ship.sql")
 
     elif search_method == SearchMethodSpatial.trajectories:
-        add_trajectory_from_where_clause_to_query(qb,
-                                                  spatial_bounds, temporal_bounds, temporal_params)
+        add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds)
 
     elif "cell" in search_method.value:
-        add_cell_from_where_clause_to_query(qb, placeholders, search_method,
-                                            spatial_bounds, temporal_bounds, temporal_params)
+        add_cell_from_where_clause_to_query(qb, placeholders, search_method, spatial_bounds, temporal_bounds)
 
     else:
         raise HTTPException(status_code=400, detail="Search method not supported")
@@ -283,7 +281,7 @@ def update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, fro
             temporal_params["to_time"] = datetime.datetime.max.strftime("%H%M%S")
 
 
-def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds, temporal_params):
+def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds):
     """Add the FROM and WHERE clauses for the trajectory search method to the query builder."""
     qb.add_sql("from_trajectory.sql")
     if temporal_bounds and spatial_bounds:
@@ -299,7 +297,7 @@ def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bound
 
 
 def add_cell_from_where_clause_to_query(qb, placeholders, search_method,
-                                        spatial_bounds, temporal_bounds, temporal_params):
+                                        spatial_bounds, temporal_bounds):
     """Add the FROM and WHERE clauses for the cell search method to the query builder and update the placeholders."""
     qb.add_sql("from_cell.sql")
     placeholders.update({"CELL_SIZE": search_method.value})
