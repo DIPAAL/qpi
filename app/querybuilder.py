@@ -4,9 +4,6 @@ from helper_functions import get_file_contents
 import os
 from typing import Any, Self
 
-# FIXME: All docstrings need to be updated, as some are incorrect due to refactoring
-# FIXME: All methods need to be updated with proper typehints
-# FIXME: Double check that all inlined comments are still relevant
 
 class QueryBuilder:
     """A class to build a query from a set of sql files and/or strings."""
@@ -16,7 +13,7 @@ class QueryBuilder:
         Initialise the query builder.
 
         Args:
-            sql_path (str): The path to the directory containing the sql files
+            sql_path (str): The path to the directory containing sql files
         """
         self.sql_path = sql_path
         self.inc_num = 0
@@ -28,12 +25,11 @@ class QueryBuilder:
 
         Args:
             sql_file (str): The name of the sql file to add to the query
-            new_line (bool): Whether to add a new line before the sql file's content is added to the query
 
         Returns:
             QueryBuilder: The query builder object
         """
-        self._is_sql_file(sql_file)
+        self._validate_sql_file(sql_file)
 
         self.query += "\n"
 
@@ -41,9 +37,9 @@ class QueryBuilder:
         return self
 
     @staticmethod
-    def _is_sql_file(file: str):
+    def _validate_sql_file(file: str) -> None:
         """
-        Check if a file is a sql file.
+        Validate that the file is a sql file.
 
         Raises:
             ValueError: If the file is not a sql file
@@ -51,13 +47,12 @@ class QueryBuilder:
         if not file.endswith(".sql"):
             raise ValueError("File must be a .sql file")
 
-    def add_string(self, string: str):
+    def add_string(self, string: str) -> Self:
         """
         Add a string to the query.
 
         Args:
             string (str): The string to add to the query
-            new_line (bool): Whether to add a new line before the string is added to the query
 
         Returns:
             QueryBuilder: The query builder object
@@ -67,25 +62,21 @@ class QueryBuilder:
         self.query += string
         return self
 
-    def add_where(self, param_name: str, operator: str, value: Any, param_dict: dict = None):
+    def add_where(self, param_name: str, operator: str, value: Any, param_dict: dict) -> Self:
         """
-        Add a where clause to the query and add the parameter and its value to the param_dict if it is provided.
+        Add a where clause to the query and add the parameter to the dict.
 
         Args:
-            param (str): What parameter to filter on
-            operator (str): What operator to use in the where clause.
+            param_name (str): The name of the parameter to add to the dict
+            operator (str): What operator to use in the where clause
             value (Any): What value to filter on
             param_dict (dict): The dict to add the parameter and its value to
-            param_name (str): The name of the parameter to add to the dict
-            new_line (bool): Whether to add a new line before the where clause is added to the query
 
         Returns:
             QueryBuilder: The query builder object
         """
         self.query += "\n"
 
-        # If the value is not a number, then we must create placeholders for the value
-        # This is to prevent SQL injection
         value_placeholder = f"{'param' + str(self.inc_num)}"
         self.inc_num += 1
         self._prefix_where_or_and(f"{param_name} {operator} :{value_placeholder}")
@@ -96,13 +87,12 @@ class QueryBuilder:
         param_dict[value_placeholder] = value
         return self
 
-    def add_where_from_file(self, sql_file):
+    def add_where_from_file(self, sql_file) -> Self:
         """
         Add a where clause from a file to the query.
 
         Args:
             sql_file (str): The name of the sql file to add to the query
-            new_line (bool): Whether to add a new line before the where clause is added to the query
 
         Returns:
             QueryBuilder: The query builder object
@@ -113,13 +103,12 @@ class QueryBuilder:
 
         return self
 
-    def add_where_from_string(self, string):
+    def add_where_from_string(self, string) -> Self:
         """
         Add a where clause from a string to the query.
 
         Args:
             string (str): The string to add to the query
-            new_line (bool): Whether to add a new line before the where clause is added to the query
 
         Returns:
             QueryBuilder: The query builder object
@@ -130,15 +119,15 @@ class QueryBuilder:
 
         return self
 
-    def _prefix_where_or_and(self, string: str):
+    def _prefix_where_or_and(self, string: str) -> None:
         """Check if the query already has a where clause."""
         self.query += f"AND {string}" if "WHERE" in self.query else f"WHERE {string}"
 
-    def end_query(self):
+    def end_query(self) -> None:
         """Add a semicolon to the end of the query."""
         self.query += ";"  # Add semicolon to end of query
 
-    def get_query_text(self):
+    def get_query_text(self) -> text:
         """
         Get the query as a sqlalchemy text object.
 
@@ -146,7 +135,7 @@ class QueryBuilder:
         """
         return text(self.query)
 
-    def get_query_str(self):
+    def get_query_str(self) -> str:
         """
         Get the query as a string.
 
@@ -155,8 +144,8 @@ class QueryBuilder:
         return self.query
 
     @staticmethod
-    def get_sql_operator(param_name: str):
-        """Get the sql operator from the parameter name.
+    def get_sql_operator(param_name: str) -> str:
+        """Get the sql operator from the parameter (e.g. _in -> IN).
 
         Args:
             param_name (str): The name of the parameter to get the operator from
@@ -171,7 +160,7 @@ class QueryBuilder:
         except KeyError:
             raise ValueError("Invalid type of parameter")
 
-    def format_query(self, param_dict: dict):
+    def format_query(self, param_dict: dict) -> None:
         """Format the placeholders in the query with the values in the param_dict.
 
         Args:
