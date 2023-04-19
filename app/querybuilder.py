@@ -2,8 +2,11 @@
 from sqlalchemy import text
 from helper_functions import get_file_contents
 import os
-from typing import Any
+from typing import Any, Self
 
+# FIXME: All docstrings need to be updated, as some are incorrect due to refactoring
+# FIXME: All methods need to be updated with proper typehints
+# FIXME: Double check that all inlined comments are still relevant
 
 class QueryBuilder:
     """A class to build a query from a set of sql files and/or strings."""
@@ -19,7 +22,7 @@ class QueryBuilder:
         self.inc_num = 0
         self.query = ""
 
-    def add_sql(self, sql_file: str):
+    def add_sql(self, sql_file: str) -> Self:
         """
         Add the contents of a sql file to the query.
 

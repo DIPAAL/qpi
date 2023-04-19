@@ -11,6 +11,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
+
+
 def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
     """
     Execute a given function and prints the time it took the function to execute.

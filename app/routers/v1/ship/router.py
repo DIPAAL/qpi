@@ -19,6 +19,8 @@ router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
+# FIXME: Ensure, formal parameters have typehints, documentation of functions are updated and described the
+#  current arguments and that functions have return typehints.
 
 @router.get("/")
 async def ships(  # noqa: C901

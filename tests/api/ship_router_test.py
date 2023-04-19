@@ -14,12 +14,12 @@ dates = [
 ]
 
 
-@pytest.mark.parametrize("datetime_input, from_or_to, exp_date, exp_time, date_key, time_key", dates)
-def test_update_params_datetime(datetime_input, from_or_to, exp_date, exp_time, date_key, time_key):
+@pytest.mark.parametrize("datetime_input, from_or_to, exp_date, exp_time, exp_date_key, exp_time_key", dates)
+def test_update_params_datetime(datetime_input, from_or_to, exp_date, exp_time, exp_date_key, exp_time_key):
     params = {}
     datetime_input = datetime.datetime.strptime(datetime_input, "%Y-%m-%dT%H:%M:%SZ")
     update_params_datetime(params, datetime_input, from_or_to)
-    assert params == {date_key: exp_date, time_key: exp_time}
+    assert params == {exp_date_key: exp_date, exp_time_key: exp_time}
 
 
 def test_update_params_datetime_empty_dict():
