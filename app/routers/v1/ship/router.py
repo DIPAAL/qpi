@@ -12,6 +12,8 @@ from helper_functions import response
 from app.schemas.search_method_spatial import SearchMethodSpatial
 from app.schemas.mobile_type import MobileType
 from app.schemas.ship_type import ShipType
+from typing import Any, List, Type
+from enum import Enum
 import datetime
 import os
 
@@ -19,17 +21,12 @@ router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
-# FIXME: Ensure, formal parameters have typehints, documentation of functions are updated and described the
-#  current arguments and that functions have return typehints.
 
 @router.get("/")
-async def ships(  # noqa: C901
+async def ships(
         # Pagination
         offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
         limit: int = Query(default=10, description="Limit the number of ships returned by the request to X"),
-        # Filter for a specific ship
-        ship_id: int | None = Query(default=None,
-                                    description="Filter for a specific ship by its ID in the fact_ship relation"),
         # Filters for ships
         mmsi_in: list[int] | None = Query(default=None,
                                           description="Filter for ships with specified MMSIs"),
@@ -140,13 +137,13 @@ async def ships(  # noqa: C901
                                                  description="Filter for ships without specified flag states"),
 
         # Filters for ship type
-        mobile_type_in: list[MobileType] | None = Query(default=None,
+        mobile_type_in: List[MobileType] | None = Query(default=None,
                                                         description="Filter for ships with specified mobile types"),
-        mobile_type_nin: list[MobileType] | None = Query(default=None,
+        mobile_type_nin: List[MobileType] | None = Query(default=None,
                                                          description="Filter for ships without specified mobile types"),
-        ship_type_in: list[ShipType] | None = Query(default=None,
+        ship_type_in: List[ShipType] | None = Query(default=None,
                                                     description="Filter for ships with specified ship types"),
-        ship_type_nin: list[ShipType] | None = Query(default=None,
+        ship_type_nin: List[ShipType] | None = Query(default=None,
                                                      description="Filter for ships without specified ship types"),
         # Search method
         search_method: SearchMethodSpatial = Query(default="cell_1000m",
@@ -181,7 +178,7 @@ async def ships(  # noqa: C901
 
     Note that when using spatial bounds, the SRID for trajectories is 4326 and for cells 3034.
     """
-    # Query builder instantiated and ship select statement added to query
+    # Query builder instantiated
     qb = QueryBuilder(SQL_PATH)
 
     # Parameters to be added to final query.
@@ -189,17 +186,19 @@ async def ships(  # noqa: C901
         "offset": offset,
         "limit": limit
     }
-    # Placeholders to be replaced in the final query.
+
+    # Placeholders to be added to final query.
     placeholders = {}
 
-    # First, the select statement is added to the query, which is the same for all queries.
-    # This part of the query also determines what the output for the client will be.
+    # First, the SELECT clause is added to the query, which is the same for all queries.
+    # This statement also determines what the output for the client will be.
     qb.add_sql("select_ship.sql")
 
     # Setup of spatial bounds if provided
     spatial_params: dict = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
     spatial_bounds = True if any(value is not None for value in spatial_params.values()) else False
 
+    # If spatial bounds are provided, but not complete, raise an error
     if spatial_bounds and None in spatial_params.values():
         raise HTTPException(status_code=400, detail="Spatial bounds not complete")
 
@@ -213,13 +212,12 @@ async def ships(  # noqa: C901
 
     temporal_bounds = True if any(value is not None for value in temporal_params.values()) else False
 
-    # Default to min and max datetime if only one is provided
+    # If temporal bounds are provided, but not complete, set the leftover bound to its min or max values
     update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, from_datetime, to_datetime)
 
     params.update(temporal_params)
 
-    # From and where statements added to query, depending on search method and temporal/spatial bounds
-    # If no temporal or spatial bounds are provided, we join no tables with spatial or temporal information.
+    # Add FROM and WHERE clauses to query, depending on the spatial/temporal bounds provided
     if not temporal_bounds and not spatial_bounds:
         qb.add_sql("from_ship.sql")
 
@@ -232,7 +230,7 @@ async def ships(  # noqa: C901
     else:
         raise HTTPException(status_code=400, detail="Search method not supported")
 
-    # All parameters for the ship filters
+    # All filter parameters for the ship dimension.
     filter_params_ship = {
         "mmsi_in": mmsi_in,     "mmsi_nin": mmsi_nin,   "mmsi_gt": mmsi_gt,
         "mmsi_gte": mmsi_gte,   "mmsi_lte": mmsi_lte,   "mmsi_lt": mmsi_lt,
@@ -256,7 +254,7 @@ async def ships(  # noqa: C901
 
     }
 
-    # All parameters for ship type filters
+    # All filter parameters for the ship type dimension.
     filter_params_ship_type = {
         "mobile_type_in": get_values_from_enum_list(mobile_type_in, MobileType),
         "mobile_type_nin": get_values_from_enum_list(mobile_type_nin, MobileType),
@@ -268,7 +266,7 @@ async def ships(  # noqa: C901
     add_filters_to_query_and_param(qb, "ds.", filter_params_ship, params)
     add_filters_to_query_and_param(qb, "dst.", filter_params_ship_type, params)
 
-    # Statements for order by, offset and limit is added to the query
+    # Clause for order by, offset and limit is added to the query
     qb.add_string("ORDER BY ds.ship_id LIMIT :limit OFFSET :offset;")
 
     # Finally, format all placeholders in the query, then collect the query string and return the response
@@ -277,13 +275,14 @@ async def ships(  # noqa: C901
     return JSONResponse(response(final_query, dw, params))
 
 
-def update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, from_datetime, to_datetime):
+def update_params_datetime_min_max_if_none(temporal_params: dict, temporal_bounds: bool,
+                                           from_datetime: datetime.datetime, to_datetime: datetime.datetime) -> None:
     """
-    Update the temporal parameters to min and max datetime if only one is provided.
+    Update the temporal parameters to min and max datetime if the temporal bounds are provided, but not complete.
 
     Args:
         temporal_params (dict): The temporal parameters to update.
-        temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
+        temporal_bounds (bool): If true, the temporal bounds are added to the temporal parameters.
         from_datetime (datetime): The from datetime.
         to_datetime (datetime): The to datetime.
     """
@@ -296,13 +295,14 @@ def update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, fro
             temporal_params["to_time"] = datetime.datetime.max.strftime("%H%M%S")
 
 
-def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bounds):
+def add_trajectory_from_where_clause_to_query(qb: QueryBuilder, spatial_bounds: bool, temporal_bounds: bool) -> None:
     """
     Add the FROM and WHERE clauses for the trajectory search method to the query builder.
 
-    qb (QueryBuilder): The query builder to add the clauses to.
-    spatial_bounds (bool): If true, the spatial bounds are added to the WHERE clause.
-    temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
+    Args:
+        qb (QueryBuilder): The query builder to add the clauses to.
+        spatial_bounds (bool): If true, the spatial bounds are added to the WHERE clause.
+        temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
     """
     qb.add_sql("from_trajectory.sql")
     if temporal_bounds and spatial_bounds:
@@ -317,15 +317,15 @@ def add_trajectory_from_where_clause_to_query(qb, spatial_bounds, temporal_bound
                                  "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && dt.trajectory")
 
 
-def add_cell_from_where_clause_to_query(qb, placeholders, search_method,
-                                        spatial_bounds, temporal_bounds) -> None:
+def add_cell_from_where_clause_to_query(qb: QueryBuilder, placeholders: dict, search_method: SearchMethodSpatial,
+                                        spatial_bounds: bool, temporal_bounds: bool) -> None:
     """
     Add the FROM and WHERE clauses for the cell search method to the query builder and update the placeholders.
 
     Args:
         qb (QueryBuilder): The query builder to add the clauses to.
         placeholders (dict): The placeholders to update.
-        search_method (SearchMethod): The search method to use. Determines the cell size.
+        search_method (SearchMethodSpatial): The search method to use. Determines the cell size.
         spatial_bounds (bool): If true, the spatial bounds are added to the WHERE clause.
         temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
     """
@@ -362,7 +362,6 @@ def update_params_datetime(param_dict: dict, dt: datetime.datetime, from_or_to: 
 def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict) -> None:
     """Add filters to the query builder from the given parameters and add the parameters to the params dict.
 
-    FIXME: Better documentation.
     Args:
         qb: The query builder object.
         relation_name: The name of the relation to add the filters to.
@@ -375,9 +374,13 @@ def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_
             qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
 
 
-def get_values_from_enum_list(enum_list, enum_type) -> list:
+def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> list[Any]:
     """
     Get the values from an enum list.
+
+    Args:
+        enum_list: A list of enums.
+        enum_type: The type of the enums in the list.
 
     Returns: A list of values from an enum list.
     """
@@ -386,11 +389,12 @@ def get_values_from_enum_list(enum_list, enum_type) -> list:
 
 
 @router.get("/{ship_id}")
-async def ship_id(
+async def ship_by_id(
         ship_id: int = Path(description="The ship ID for a ship in the data warehouse"),
         dw: Session = Depends(get_dw)
 ):
     """Get information about a ship by its ID."""
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("ship_by_id.sql")
-    return JSONResponse(response(qb.get_query_str(), dw, {"id": ship_id}))
+    final_query = qb.get_query_str()
+    return JSONResponse(response(final_query, dw, {"id": ship_id}))

@@ -10,18 +10,17 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+# Type variable for the return type of the function passed to wrap_with_timings.
+wraps_result = TypeVar('wraps_result')
 
 
-
-def wrap_with_timings(name: str, func, audit_etl_stage: str = None):
+def wrap_with_timings(name: str, func: Callable[[], wraps_result]) -> wraps_result:
     """
     Execute a given function and prints the time it took the function to execute.
 
     Keyword arguments:
         name: identifier for the function execution, used to identify it in the output
         func: the zero argument function to execute
-        audit_etl_stage: name of the ETL stage, must be a valid ETL stage name. If used, the ETL stage will be logged.
-            (default: None)
 
     Examples
     --------
@@ -61,7 +60,7 @@ def measure_time(func: Callable[[], T]) -> Tuple[T, float]:
 config = None  # Global configuration variable
 
 
-def get_config():
+def get_config() -> configparser.ConfigParser:
     """Get the application configuration."""
     global config
 
@@ -80,23 +79,23 @@ def get_config():
     return config
 
 
-def readfile(path_from_root):
+def readfile(path_from_root) -> str:
     """Read a file from the root directory."""
     path = os.path.join(ROOT_DIR, f'{path_from_root}')
     with open(path, "r") as f:
         return f.read()
 
 
-def get_connection():
+def get_connection() -> psycopg2.extensions.connection:
     """
     Return a connection to the database.
 
     Keyword arguments:
         config: the application configuration
-        database: the name of the database (default None)
-        host: host and port of the database concatenated using ':' (default None)
-        user: username for the database user to use (default None)
-        password: password for the database user (defualt None)
+        database: the name of the database
+        host: host and port of the database concatenated using ':'
+        user: username for the database user
+        password: password for the database user
     """
     config = get_config()
     host, port = config['Database']['host'].split(':')
@@ -112,7 +111,7 @@ def get_connection():
     )
 
 
-def get_file_path(path_from_root: str):
+def get_file_path(path_from_root: str) -> str:
     """Get the path to a file from the root directory.
 
     Args:
@@ -121,7 +120,7 @@ def get_file_path(path_from_root: str):
     return os.path.join(ROOT_DIR, f'{path_from_root}')
 
 
-def get_file_contents(path_from_root: str):
+def get_file_contents(path_from_root: str) -> str:
     """Get the contents of a file from the root directory.
 
     Args:
@@ -131,11 +130,9 @@ def get_file_contents(path_from_root: str):
         return f.read()
 
 
-# TODO: Change implementation. Should return a response object,
-#  so that FastAPI can provide a proper response body as an example.
-def response(query: str, dw: Session, params: dict):
+def response(query: str, dw: Session, params: dict) -> list[dict]:
     """
-    Return a response from a query.
+    Return a list of dictionaries from a query.
 
     Args:
         query (str): The query to execute.
