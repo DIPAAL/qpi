@@ -15,6 +15,7 @@ import imageio.v2 as imageio
 
 from app.schemas.multi_output_format import MultiOutputFormat
 
+
 satellite = rio.open("qpi/run/references/danish_waters_3034.tiff")
 
 

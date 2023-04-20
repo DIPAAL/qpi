@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_dw
-from app.api_constants import DWTABLE
+from app.schemas.relations import DWRELATION
 
 
 router = APIRouter()
@@ -19,11 +19,11 @@ def table():
     Returns:
         A list of tables in the database
     """
-    return [table.value for table in DWTABLE]
+    return [table.value for table in DWRELATION]
 
 
 @router.get("/{table}/count")
-def count_rows(table: DWTABLE, db: Session = Depends(get_dw)):
+def count_rows(table: DWRELATION, db: Session = Depends(get_dw)):
     """
     Count the number of rows in a table.
 
@@ -40,7 +40,7 @@ def count_rows(table: DWTABLE, db: Session = Depends(get_dw)):
 
 
 @router.get("/{table}/columns")
-def column_names(table: DWTABLE, db=Depends(get_dw)):
+def column_names(table: DWRELATION, db=Depends(get_dw)):
     """
     Get the column names of a table.
 

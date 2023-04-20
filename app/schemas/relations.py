@@ -2,8 +2,8 @@
 from enum import Enum
 
 
-class DWTABLE(str, Enum):
-    """Enum for all data warehouse tables."""
+class DWRELATION(str, Enum):
+    """Enum for all data warehouse relations."""
 
     dim_cell_50m = "dim_cell_50m"
     dim_cell_200m = "dim_cell_200m"
@@ -26,8 +26,8 @@ class DWTABLE(str, Enum):
     fact_trajectory = "fact_trajectory"
 
 
-class MISCTABLE(str, Enum):
-    """All miscellaneous tables."""
+class MISCRELATION(str, Enum):
+    """All miscellaneous relations."""
 
     audit_log = "audit_log"
     benchmark_result = "benchmark_result"
