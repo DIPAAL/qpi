@@ -3,7 +3,7 @@
 from sqlalchemy import Column, DateTime, Integer, String, ARRAY
 from sqlalchemy.dialects.postgresql import JSON
 
-from app.database import Base
+from app.datawarehouse import Base
 
 
 class AuditLog(Base):

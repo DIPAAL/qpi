@@ -1,11 +1,11 @@
 """FastAPI dependencies for dependency injection into routers or the main app."""
-from app.database import SessionLocal
+from app.datawarehouse import SessionLocal
 
 
 def get_dw():
     """Use the globally scoped sessionmaker to create a db session scoped to the request."""
-    db = SessionLocal()
+    dw = SessionLocal()
     try:
-        yield db
+        yield dw
     finally:
-        db.close()
+        dw.close()
