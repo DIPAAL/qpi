@@ -90,7 +90,7 @@ class QueryBuilder:
         param_dict[value_placeholder] = value
         return self
 
-    def add_where_from_file(self, sql_file) -> Self:
+    def add_where_from_file(self, sql_file: str) -> Self:
         """
         Add a where clause from a file to the query.
 
@@ -106,7 +106,7 @@ class QueryBuilder:
 
         return self
 
-    def add_where_from_string(self, string) -> Self:
+    def add_where_from_string(self, string: str) -> Self:
         """
         Add a where clause from a string to the query.
 
@@ -123,7 +123,12 @@ class QueryBuilder:
         return self
 
     def _prefix_where_or_and(self, string: str) -> None:
-        """Check if the query already has a where clause."""
+        """
+        Adds a WHERE or AND to the start of the string.
+
+        Args:
+            string (str): The string to add the WHERE or AND to
+        """
         self.query += f"AND {string}" if "WHERE" in self.query else f"WHERE {string}"
 
     def end_query(self) -> None:
