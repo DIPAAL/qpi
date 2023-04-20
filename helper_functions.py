@@ -87,16 +87,7 @@ def readfile(path_from_root) -> str:
 
 
 def get_connection() -> psycopg2.extensions.connection:
-    """
-    Return a connection to the database.
-
-    Keyword arguments:
-        config: the application configuration
-        database: the name of the database
-        host: host and port of the database concatenated using ':'
-        user: username for the database user
-        password: password for the database user
-    """
+    """Return a connection to the database."""
     config = get_config()
     host, port = config['Database']['host'].split(':')
     database = config['Database']['database']
