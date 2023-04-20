@@ -124,7 +124,9 @@ class QueryBuilder:
 
     def _prefix_where_or_and(self, string: str) -> None:
         """
-        Adds a WHERE or AND to the start of the string.
+        Add a WHERE or AND to the start of the string, based on whether the query already has a WHERE clause.
+
+        This is to ensure that the query is valid SQL.
 
         Args:
             string (str): The string to add the WHERE or AND to
