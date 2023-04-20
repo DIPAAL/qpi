@@ -41,6 +41,9 @@ class QueryBuilder:
         """
         Validate that the file is a sql file.
 
+        Arguments:
+            file: the name of the file to validate
+
         Raises:
             ValueError: If the file is not a sql file
         """
