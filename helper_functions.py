@@ -4,7 +4,6 @@ import os
 from datetime import datetime, timedelta
 from typing import Tuple, Callable, TypeVar
 from time import perf_counter
-import psycopg2
 from constants import ROOT_DIR
 
 
@@ -80,28 +79,3 @@ def readfile(path_from_root):
     path = os.path.join(ROOT_DIR, f'{path_from_root}')
     with open(path, "r") as f:
         return f.read()
-
-
-def get_connection():
-    """
-    Return a connection to the database.
-
-    Keyword arguments:
-        config: the application configuration
-        database: the name of the database (default None)
-        host: host and port of the database concatenated using ':' (default None)
-        user: username for the database user to use (default None)
-        password: password for the database user (defualt None)
-    """
-    config = get_config()
-    host, port = config['Database']['host'].split(':')
-    database = config['Database']['database']
-    user = config['Database']['user']
-    password = config['Database']['password']
-    return psycopg2.connect(
-        host=host,
-        database=database,
-        user=user,
-        password=password,
-        port=port
-    )
