@@ -5,7 +5,7 @@ from app.dependencies import get_dw
 from sqlalchemy.orm import Session
 from app.schemas.mobile_type import MobileType
 from app.querybuilder import QueryBuilder
-from helper_functions import response, update_params_datetime_min_max_if_none
+from helper_functions import response, get_values_from_enum_list
 import json
 import os
 from app.schemas.content_type import ContentType
@@ -25,10 +25,9 @@ async def get_trajectories_by_date_id_and_sub_id(
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("select_date_id_and_sub_id.sql")
     final_query = qb.get_query_str()
-    query_response = response(final_query, dw, params)
-    query_response = _format_mfsjon(query_response, ["trajectory", "rot", "heading", "draught"])
 
-    return query_response  # Returned as a JSON Array by FastAPI, providing conversion to avoiding serialization issues.
+    # Returned as a JSON Array by FastAPI, which provides conversion of types to avoiding serialization issues.
+    return response(final_query, dw, params)
 
 
 @router.get("/trajectories/}")
@@ -61,47 +60,47 @@ async def get_trajectories(
         srid: int = Query(default=4326,
                           description="The spatial reference system for the trajectory."),
         from_date: datetime | None = Query(default=None,
+                                           example="2021-01-01T00:00:00Z",
                                            description="The start date for the trajectory."),
         to_date: datetime | None = Query(default=None,
+                                         example="2021-01-01T00:00:00Z",
                                          description="The end date for the trajectory."),
         stopped: bool | None = Query(default=None,
-                                     description="If the trajectory must represents a stopped ship."),
-        content_type: ContentType = Query(default=[ContentType.MFJSON],
-                                          description="The content type of the response."),
+                                     description="If the trajectory must represents a stopped ship."
+                                                 "\nIf not provided, both stopped and non-stopped ships are returned."),
+        content_type: ContentType = Query(default="MFJSON",
+                                          description="The content type of the trajectories in the response."),
         dw: Session = Depends(get_dw)
 ):
     """Get trajectories based on the provided parameters."""
     params = {"offset": offset, "limit": limit}
-    trajectory_params = {"stopped": stopped}
-    ship_params = {
-        "mmsi": mmsi, "imo": imo, "name": name,
-        "country": country, "callsign": callsign, "mobile_type": mobile_type
-    }
+    trajectory_params = {"infer_stopped": stopped}
+    ship_params = {"mmsi": mmsi, "imo": imo, "name": name, "country": country, "callsign": callsign}
+    ship_type_params = {"mobile_type": get_values_from_enum_list(mobile_type, MobileType)}
     nav_status_params = {"destination": destination}
-    temporal_params = {"from_date": from_date, "to_date": to_date}
+    temporal_params = {"from_datetime": from_date, "to_datetime": to_date}
     # SRID is not required to be complete, and is therefore not part of this dict.
-    spatial_params = {"x_min": x_min, "y_min": y_min, "x_max": x_max, "y_max": y_max}
+    spatial_params = {"xmin": x_min, "ymin": y_min, "xmax": x_max, "ymax": y_max}
 
     qb = QueryBuilder(SQL_PATH)
 
     # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
-    if ContentType.MFJSON:
+    if content_type.MFJSON:
         qb.add_sql("select_MFJSON.sql")
-    elif ContentType.GEOJSON:
+    elif content_type.GEOJSON:
         qb.add_sql("select_GeoJSON.sql")
     else:
         raise HTTPException(status_code=400, detail="Invalid content type")
 
     # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
-    if any(value is not None for value in ship_params.values()):
-        qb.add_string("JOIN dim_ship ds on ft.ship_id = ds.ship_id")
+    _add_joins_ship_relations(qb, ship_params, ship_type_params)
 
     # If certain parameters are provided, then they are added to the query as a WHERE/AND clause, filtering results.
-    _filter_in(qb, params, {"ft": trajectory_params, "ds": ship_params, "dns": nav_status_params})
+    _filter_operator(qb, params, {"ds": ship_params, "dst": ship_type_params, "dns": nav_status_params}, "IN")
+    _filter_operator(qb, params, {"ft": trajectory_params}, "=")
 
     # Check if any temporal or spatial parameters are provided and update the parameters accordingly.
-    temporal_bounds = _update_params(params, temporal_params)
-    update_params_datetime_min_max_if_none(params, temporal_params)
+    temporal_bounds = _update_params_temporal(params, temporal_params)
     spatial_bounds = _update_params(params, spatial_params)
 
     # If spatial bounds are provided, but not complete, raise an error.
@@ -110,22 +109,72 @@ async def get_trajectories(
 
     _update_params(params, {"srid": srid}) if spatial_bounds else None
 
-    # If temporal or spatial bounds are provided, a WHERE/AND clause is added to the query, filtering results.
+    # If temporal or spatial bounds are provided, WHERE clauses are added to the query.
     _filter_temporal_spatial(qb, spatial_bounds, temporal_bounds)
 
     # Clause for order by, offset and limit is added to the query
     qb.add_string("ORDER BY ft.trajectory_sub_id OFFSET :offset LIMIT :limit;")
 
     final_query = qb.get_query_str()
-    print(final_query)
-    query_response = response(final_query, dw, params)
-    query_response = _format_mfsjon(query_response, ["trajectory", "rot", "heading", "draught"])
-    return query_response  # Returned as a JSON Array by FastAPI, providing conversion to avoiding serialization issues.
+
+    # Returned as a JSON Array by FastAPI, which provides conversion of types to avoiding serialization issues.
+    return response(final_query, dw, params)
 
 
-def _update_params(params: dict, param_dict: dict):
+def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict, ship_type_params: dict):
+    """
+    Add JOIN clauses to the query builder, depending on the provided parameters.
+
+    If any of the parameters for the ship is provided, a JOIN clause between the fact_trajectory and dim_ship is added.
+    If the mobile_type parameter is provided, a JOIN clause between the dim_ship and dim_ship_type is added.
+
+    Args:
+        qb (QueryBuilder): The query builder to add the JOIN clauses to.
+        ship_params (dict): The parameters for the ship.
+        ship_type_params (dict): The parameters for the ship type.
+    """
+    ship_sql_str = "JOIN dim_ship ds on ft.ship_id = ds.ship_id"
+    ship_type_sql_str = "JOIN dim_ship_type dst on ds.ship_type_id = dst.ship_type_id"
+    ship_join_added = False
+    if any(value is not None for value in ship_params.values()):
+        qb.add_string(ship_sql_str)
+        ship_join_added = True
+    if ship_type_params["mobile_type"] is not None:
+        if ship_join_added:
+            qb.add_string(ship_type_sql_str)
+        else:
+            qb.add_string(ship_sql_str).add_string(ship_type_sql_str)
+
+
+def _update_params_temporal(params: dict, temporal_dict: dict) -> bool:
+    """
+    Update the params dict with the values from temporal_dict.
+
+    If only one of the values is provided, the other is set to the min or max value.
+
+    Args:
+        params (dict): The params dict to add the values to.
+        temporal_dict (dict): The dict containing the temporal values to add.
+    """
+    if temporal_dict["from_datetime"] is None and temporal_dict["to_datetime"] is None:
+        return False
+    temporal_dict["from_datetime"] = temporal_dict["from_datetime"] if temporal_dict["to_datetime"] else datetime.min
+    temporal_dict["to_datetime"] = temporal_dict["to_datetime"] if temporal_dict["from_datetime"] else datetime.max
+    _update_params(params,
+                   {"from_date": temporal_dict["from_datetime"].strftime("%Y%m%d"),
+                    "from_time": temporal_dict["from_datetime"].strftime("%H%M%S"),
+                    "to_date": temporal_dict["to_datetime"].strftime("%Y%m%d"),
+                    "to_time": temporal_dict["to_datetime"].strftime("%H%M%S")})
+    return True
+
+
+def _update_params(params: dict, param_dict: dict) -> bool:
     """
     Update the params dict with the values from param_dict if the value is not None.
+
+    Args:
+        params (dict): The params dict to add the values to.
+        param_dict (dict): The dict containing the values to add.
 
     Returns:
         bool: True if any value was updated, False otherwise.
@@ -138,32 +187,40 @@ def _update_params(params: dict, param_dict: dict):
     return update
 
 
-def _filter_in(qb: QueryBuilder, params: dict, filter_dict: dict):
+def _filter_operator(qb: QueryBuilder, params: dict, filter_dict: dict, operator: str) -> None:
     """
-    Add a WHERE/AND clause with and IN operator to the query for each value in the filter_dict that is not None.
+    Add a WHERE clause to the query builder, depending on the provided parameters.
 
      Args:
          qb (QueryBuilder): The QueryBuilder object to add the WHERE/AND clause to.
          params (dict): The params dict to add the values to.
-         filter_dict (dict):
+         filter_dict (dict): The dict containing the values to filter on.
+         operator (str): The operator to use in the WHERE clause.
     """
     for relation, param_dict in filter_dict.items():
         for key, value in param_dict.items():
             if value is not None:
-                qb.add_where(relation + "." + key, "IN", value, params)
+                qb.add_where(relation + "." + key, operator, value, params)
 
 
-def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bounds: bool):
-    """Add temporal and spatial filters to the query if bounds are provided."""
-    bound_placeholder = None
+def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bounds: bool) -> None:
+    """
+    Add temporal and spatial filters to the query if bounds are provided.
+
+    Args:
+        qb (QueryBuilder): The QueryBuilder object to add the WHERE/AND clause to.
+        spatial_bounds (bool): True if spatial bounds are provided, False otherwise.
+        temporal_bounds (bool): True if temporal bounds are provided, False otherwise.
+    """
+    bound_placeholder = ""
     if temporal_bounds or spatial_bounds:
-        qb.add_string("STBOX({BOUNDS}) && dt.trajectory))")
+        qb.add_where_from_string("STBOX({BOUNDS}) && dt.trajectory")
         # Adding spatial filters to the query if provided
         if spatial_bounds:
-            bound_placeholder = "ST_MakeEnvelope(:xmin,:ymin,: xmax,:ymax, :srid)"
+            bound_placeholder = "ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, :srid)"
         # Adding temporal filters to the query if provided
         if temporal_bounds:
-            if bound_placeholder is not None:
+            if bound_placeholder != "":
                 bound_placeholder += ", "
             bound_placeholder += "span(timestamp_from_date_time_id(:from_date, :from_time), " \
                                  "timestamp_from_date_time_id(:to_date, :to_time), True, True)"

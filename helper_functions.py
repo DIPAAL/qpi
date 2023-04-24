@@ -2,17 +2,14 @@
 import configparser
 import os
 from datetime import datetime, timedelta
-from typing import Tuple, Callable, TypeVar
+from typing import Tuple, Callable, TypeVar, Any, List, Type
+from enum import Enum
 from time import perf_counter
 from constants import ROOT_DIR
 import psycopg2
 import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:  # This is to avoid circular imports
-    from app.querybuilder import QueryBuilder
 
 # Type variable for the return type of the function passed to wrap_with_timings.
 wraps_result = TypeVar('wraps_result')
@@ -138,54 +135,15 @@ def response(query: str, dw: Session, params: dict) -> list[dict]:
     return df.to_dict(orient="records")
 
 
-# The following helper functions are usually used in conjunction with the QueryBuilder class.
-def update_params_datetime(param_dict: dict, dt: datetime, from_or_to: str) -> None:
+def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> list[Any]:
     """
-    Update the given parameter dict with the given parameters.
+    Get the values from an enum list.
 
     Args:
-        param_dict (dict): The parameter dict to update.
-        dt (datetime): The date and time to update the parameter dict with.
-        from_or_to (str): A string, either "from" or "to" to indicate if the datetime is the upper or lower bound
-         of the temporal bounds.
+        enum_list: A list of enums.
+        enum_type: The type of the enums in the list.
+
+    Returns: A list of values from an enum list.
     """
-    if dt:
-        param_dict.update({
-            f'{from_or_to}_date': int(dt.strftime("%Y%m%d")),
-            f'{from_or_to}_time': int(dt.strftime("%H%M%S"))
-        })
-
-
-def update_params_datetime_min_max_if_none(temporal_params: dict, temporal_bounds: bool,
-                                           from_datetime: datetime, to_datetime: datetime) -> None:
-    """
-    Update the temporal parameters to min and max datetime if the temporal bounds are provided, but not complete.
-
-    Args:
-        temporal_params (dict): The temporal parameters to update.
-        temporal_bounds (bool): If true, the temporal bounds are added to the temporal parameters.
-        from_datetime (datetime): The from datetime.
-        to_datetime (datetime): The to datetime.
-    """
-    if temporal_bounds and None in temporal_params.values():
-        if from_datetime is None:
-            temporal_params["from_date"] = datetime.min.strftime("%Y%m%d")
-            temporal_params["from_time"] = datetime.min.strftime("%H%M%S")
-        elif to_datetime is None:
-            temporal_params["to_date"] = datetime.max.strftime("%Y%m%d")
-            temporal_params["to_time"] = datetime.max.strftime("%H%M%S")
-
-
-def add_filters_to_query_and_param(qb: "QueryBuilder", relation_name: str, filter_params: dict, params: dict) -> None:
-    """Add filters to the query builder from the given parameters and add the parameters to the params dict.
-
-    Args:
-        qb (QueryBuilder): The query builder object.
-        relation_name (str): The name of the relation to add the filters to.
-        filter_params (dict): The parameters to add as filters.
-        params (dict): The parameters to add the filter parameters to.
-    """
-    for key, value in filter_params.items():
-        if value:  # Only add the filter if the parameter has a value
-            param_name = key.rsplit("_", 1)[0]
-            qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
+    if enum_list:
+        return [enum_type(value).value for value in enum_list]

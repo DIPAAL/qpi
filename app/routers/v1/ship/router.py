@@ -8,13 +8,11 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from app.querybuilder import QueryBuilder
-from helper_functions import response, update_params_datetime, update_params_datetime_min_max_if_none, \
-    add_filters_to_query_and_param
+from helper_functions import response, get_values_from_enum_list
 from app.schemas.search_method_spatial import SearchMethodSpatial
 from app.schemas.mobile_type import MobileType
 from app.schemas.ship_type import ShipType
-from typing import Any, List, Type
-from enum import Enum
+from typing import List
 import datetime
 import os
 
@@ -208,6 +206,7 @@ async def ships(
     # Setup of temporal bounds if provided
     temporal_params: dict = {"from_date": None, "from_time": None, "to_date": None, "to_time": None}
 
+    # FIXME: Some datetime nonsense going on here, fix this
     update_params_datetime(temporal_params, from_datetime, "from")
     update_params_datetime(temporal_params, to_datetime, "to")
 
@@ -323,18 +322,56 @@ def add_cell_from_where_clause_to_query(qb: QueryBuilder, placeholders: dict, se
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034)) && fc.st_bounding_box")
 
 
-def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> list[Any]:
+def update_params_datetime(param_dict: dict, dt: datetime, from_or_to: str) -> None:
     """
-    Get the values from an enum list.
+    Update the given parameter dict with the given parameters.
 
     Args:
-        enum_list: A list of enums.
-        enum_type: The type of the enums in the list.
-
-    Returns: A list of values from an enum list.
+        param_dict (dict): The parameter dict to update.
+        dt (datetime): The date and time to update the parameter dict with.
+        from_or_to (str): A string, either "from" or "to" to indicate if the datetime is the upper or lower bound
+         of the temporal bounds.
     """
-    if enum_list:
-        return [enum_type(value).value for value in enum_list]
+    if dt:
+        param_dict.update({
+            f'{from_or_to}_date': int(dt.strftime("%Y%m%d")),
+            f'{from_or_to}_time': int(dt.strftime("%H%M%S"))
+        })
+
+
+def update_params_datetime_min_max_if_none(temporal_params: dict, temporal_bounds: bool,
+                                           from_datetime: datetime, to_datetime: datetime) -> None:
+    """
+    Update the temporal parameters to min and max datetime if the temporal bounds are provided, but not complete.
+
+    Args:
+        temporal_params (dict): The temporal parameters to update.
+        temporal_bounds (bool): If true, the temporal bounds are added to the temporal parameters.
+        from_datetime (datetime): The from datetime.
+        to_datetime (datetime): The to datetime.
+    """
+    if temporal_bounds and None in temporal_params.values():
+        if from_datetime is None:
+            temporal_params["from_date"] = datetime.min.strftime("%Y%m%d")
+            temporal_params["from_time"] = datetime.min.strftime("%H%M%S")
+        elif to_datetime is None:
+            temporal_params["to_date"] = datetime.max.strftime("%Y%m%d")
+            temporal_params["to_time"] = datetime.max.strftime("%H%M%S")
+
+
+def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict) -> None:
+    """Add filters to the query builder from the given parameters and add the parameters to the params dict.
+
+    Args:
+        qb (QueryBuilder): The query builder object.
+        relation_name (str): The name of the relation to add the filters to.
+        filter_params (dict): The parameters to add as filters.
+        params (dict): The parameters to add the filter parameters to.
+    """
+    for key, value in filter_params.items():
+        if value:  # Only add the filter if the parameter has a value
+            param_name = key.rsplit("_", 1)[0]
+            qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
 
 
 @router.get("/{ship_id}")
