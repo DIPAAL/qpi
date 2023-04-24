@@ -13,7 +13,7 @@ from app.schemas.search_method_spatial import SearchMethodSpatial
 from app.schemas.mobile_type import MobileType
 from app.schemas.ship_type import ShipType
 from typing import List
-import datetime
+from datetime import datetime
 import os
 
 router = APIRouter()
@@ -149,13 +149,13 @@ async def ships(
                                                    description="Determines the search method used to find ships when "
                                                                "using spatial or temporal filters"),
         # Temporal bounds
-        from_datetime: datetime.datetime = Query(default=None,
-                                                 example="2021-01-01T00:00:00Z",
-                                                 description="Filter for ships with a first position after or at the "
-                                                             "given datetime"),
-        to_datetime: datetime.datetime = Query(default=None,
-                                               description="Filter for ships with a last position before or at the "
-                                                           "given datetime"),
+        from_datetime: datetime = Query(default=None,
+                                        example="2021-01-01T00:00:00Z",
+                                        description="Filter for ships with a first position after or at the "
+                                                    "given datetime"),
+        to_datetime: datetime = Query(default=None,
+                                      description="Filter for ships with a last position before or at the "
+                                                  "given datetime"),
         # Spatial bounds
         min_x: int = Query(default=None,
                            description="Filter for ships with a first position with a longitude greater than or equal "
@@ -206,7 +206,6 @@ async def ships(
     # Setup of temporal bounds if provided
     temporal_params: dict = {"from_date": None, "from_time": None, "to_date": None, "to_time": None}
 
-    # FIXME: Some datetime nonsense going on here, fix this
     update_params_datetime(temporal_params, from_datetime, "from")
     update_params_datetime(temporal_params, to_datetime, "to")
 

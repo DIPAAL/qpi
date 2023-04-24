@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 from app.schemas.mobile_type import MobileType
 from app.querybuilder import QueryBuilder
 from helper_functions import response, get_values_from_enum_list
-import json
 import os
 from app.schemas.content_type import ContentType
 
@@ -20,7 +19,7 @@ async def get_trajectories_by_date_id_and_sub_id(
         date_id: int = Path(description="The date id of the trajectory.", example=20070110),
         sub_id: str = Path(description="The sub id of the trajectory.", example=49396455),
         dw=Depends(get_dw)):
-    """Get trajectories for a start date id and its trajectory sub id."""
+    """Get a single trajectory from a start date id and trajectory sub id."""
     params = {"date_id": date_id, "sub_id": sub_id}
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("select_date_id_and_sub_id.sql")
@@ -121,12 +120,9 @@ async def get_trajectories(
     return response(final_query, dw, params)
 
 
-def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict, ship_type_params: dict):
+def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict, ship_type_params: dict) -> None:
     """
-    Add JOIN clauses to the query builder, depending on the provided parameters.
-
-    If any of the parameters for the ship is provided, a JOIN clause between the fact_trajectory and dim_ship is added.
-    If the mobile_type parameter is provided, a JOIN clause between the dim_ship and dim_ship_type is added.
+    Add JOIN clauses for attributes related to ships and ship types to the query builder, if applicable.
 
     Args:
         qb (QueryBuilder): The query builder to add the JOIN clauses to.
@@ -174,10 +170,10 @@ def _update_params(params: dict, param_dict: dict) -> bool:
 
     Args:
         params (dict): The params dict to add the values to.
-        param_dict (dict): The dict containing the values to add.
+        param_dict (dict): The dict containing the potential values to add.
 
     Returns:
-        bool: True if any value was updated, False otherwise.
+        bool: True if any value was added to the params dict, False otherwise.
     """
     update = False
     for key, value in param_dict.items():
@@ -189,10 +185,10 @@ def _update_params(params: dict, param_dict: dict) -> bool:
 
 def _filter_operator(qb: QueryBuilder, params: dict, filter_dict: dict, operator: str) -> None:
     """
-    Add a WHERE clause to the query builder, depending on the provided parameters.
+    Add WHERE clauses to the query builder, depending on the provided parameters.
 
      Args:
-         qb (QueryBuilder): The QueryBuilder object to add the WHERE/AND clause to.
+         qb (QueryBuilder): The QueryBuilder object to add the WHERE clauses to.
          params (dict): The params dict to add the values to.
          filter_dict (dict): The dict containing the values to filter on.
          operator (str): The operator to use in the WHERE clause.
@@ -224,22 +220,4 @@ def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bo
                 bound_placeholder += ", "
             bound_placeholder += "span(timestamp_from_date_time_id(:from_date, :from_time), " \
                                  "timestamp_from_date_time_id(:to_date, :to_time), True, True)"
-    qb.format_query({"BOUNDS": bound_placeholder}) if bound_placeholder is not None else None
-
-
-def _format_mfsjon(response_result: list[dict], attributes: list[str]) -> list[dict]:
-    """
-    Convert the MFSJON strings to a python dictionary, so FastAPI can convert it to JSON for the response.
-
-    Args:
-        response_result (list[dict]): The response from the data warehouse
-        attributes (list[str]): The attributes that are MFSJON strings
-
-    Returns:
-        list[dict]: The response with the MFSJON strings converted to python dictionaries
-    """
-    for key in response_result:
-        for attribute in attributes:
-            if key[attribute] is not None:
-                key[attribute] = json.loads(key[attribute])
-    return response_result
+    qb.format_query({"BOUNDS": bound_placeholder}) if bound_placeholder != "" else None
