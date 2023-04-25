@@ -1,7 +1,12 @@
 SELECT ft.trajectory_sub_id,
-       ft.start_date_id,
-       ft.end_date_id,
-       ft.eta_date_id,
+
+       timestamp_from_date_time_id(ft.start_date_id, ft.start_time_id) as start_timestamp,
+       timestamp_from_date_time_id(ft.end_date_id, ft.end_time_id) as end_timestamp,
+       (
+        CASE WHEN ft.eta_date_id = -1 THEN NULL
+            ELSE timestamp_from_date_time_id(ft.eta_date_id, ft.eta_time_id)
+        END
+       ) as eta_timestamp,
        asMFJSON(dt.trajectory)::json as trajectory,
        asMFJSON(dt.rot)::json as rot,
        asMFJSON(dt.heading)::json as heading,
