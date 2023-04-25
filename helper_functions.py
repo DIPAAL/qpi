@@ -118,7 +118,7 @@ def response(query: str, dw: Session, params: dict) -> list[dict]:
     return df.to_dict(orient="records")
 
 
-def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> list[Any]:
+def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> List[Any]:
     """
     Get the values from an enum list.
 
