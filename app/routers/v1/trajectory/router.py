@@ -6,12 +6,13 @@ from sqlalchemy.orm import Session
 from app.schemas.mobile_type import MobileType
 from app.querybuilder import QueryBuilder
 from helper_functions import response, get_values_from_enum_list
+from typing import Any
 import os
 from app.schemas.content_type import ContentType
 
 router = APIRouter()
 
-SQL_PATH = os.path.join(os.path.dirname(__file__), "SQL")
+SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
 
 @router.get("/trajectories/{date_id}/{sub_id}")
@@ -31,28 +32,32 @@ async def get_trajectories_by_date_id_and_sub_id(
 
 @router.get("/trajectories/}")
 async def get_trajectories(
-        offset: int = Query(default=0),
-        limit: int = Query(default=10),
+        offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
+        limit: int = Query(default=10, description="Limit the number of ships returned by the request to X"),
         x_min: float | None = Query(default=None,
-                                    description="The minimum longitude of the trajectory."),
+                                    description='Defines the "left side" of the bounding rectangle,'
+                                                ' coordinates must match the provided "srid"'),
         y_min: float | None = Query(default=None,
-                                    description="The minimum latitude of the trajectory."),
+                                    description='Defines the "bottom side" of the bounding rectangle,'
+                                                ' coordinates must match the provided "srid"'),
         x_max: float | None = Query(default=None,
-                                    description="The maximum longitude of the trajectory."),
+                                    description='Defines the "right side" of the bounding rectangle,'
+                                                ' coordinates must match the provided "srid"'),
         y_max: float | None = Query(default=None,
-                                    description="The maximum latitude of the trajectory."),
+                                    description='Defines the "top side" of the bounding rectangle,'
+                                                ' coordinates must match the provided "srid"'),
         destination: list[str] | None = Query(default=None,
-                                              description="The destination of the ship sailing on the trajectory."),
+                                              description="The destination of the ship generating the trajectory."),
         mmsi: list[int] | None = Query(default=None,
-                                       description="The MMSI for the ship sailing on the trajectory."),
+                                       description="The MMSI for the ship generating the trajectory."),
         imo: list[int] | None = Query(default=None,
-                                      description="The IMO for the ship sailing on the trajectory."),
+                                      description="The IMO for the ship generating the trajectory."),
         name: list[str] | None = Query(default=None,
-                                       description="The name for the ship sailing on the trajectory."),
+                                       description="The name for the ship generating the trajectory."),
         country: list[str] | None = Query(default=None,
-                                          description="The country for the ship sailing on the trajectory."),
+                                          description="The country for the ship generating the trajectory."),
         callsign: list[str] | None = Query(default=None,
-                                           description="The callsign for the ship sailing on the trajectory."),
+                                           description="The callsign for the ship generating the trajectory."),
         mobile_type: list[MobileType] | None = Query(default=None,
                                                      description="The mobile type for the ship"
                                                                  " sailing on the trajectory."),
@@ -88,8 +93,6 @@ async def get_trajectories(
         qb.add_sql("select_MFJSON.sql")
     elif content_type.GEOJSON:
         qb.add_sql("select_GeoJSON.sql")
-    else:
-        raise HTTPException(status_code=400, detail="Invalid content type")
 
     # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
     _add_joins_ship_relations(qb, ship_params, ship_type_params)
@@ -120,7 +123,8 @@ async def get_trajectories(
     return response(final_query, dw, params)
 
 
-def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict, ship_type_params: dict) -> None:
+def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict[str, list[str | int]],
+                              ship_type_params: dict[str, list[str]]) -> None:
     """
     Add JOIN clauses for attributes related to ships and ship types to the query builder, if applicable.
 
@@ -142,7 +146,7 @@ def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict, ship_type_par
             qb.add_string(ship_sql_str).add_string(ship_type_sql_str)
 
 
-def _update_params_temporal(params: dict, temporal_dict: dict) -> bool:
+def _update_params_temporal(params: dict[str, Any], temporal_dict: dict[str, datetime]) -> bool:
     """
     Update the params dict with the values from temporal_dict.
 
@@ -154,8 +158,8 @@ def _update_params_temporal(params: dict, temporal_dict: dict) -> bool:
     """
     if temporal_dict["from_datetime"] is None and temporal_dict["to_datetime"] is None:
         return False
-    temporal_dict["from_datetime"] = temporal_dict["from_datetime"] if temporal_dict["to_datetime"] else datetime.min
-    temporal_dict["to_datetime"] = temporal_dict["to_datetime"] if temporal_dict["from_datetime"] else datetime.max
+    temporal_dict["from_datetime"] = temporal_dict["from_datetime"] if temporal_dict["from_datetime"] else datetime.min
+    temporal_dict["to_datetime"] = temporal_dict["to_datetime"] if temporal_dict["to_datetime"] else datetime.max
     _update_params(params,
                    {"from_date": temporal_dict["from_datetime"].strftime("%Y%m%d"),
                     "from_time": temporal_dict["from_datetime"].strftime("%H%M%S"),
@@ -164,7 +168,7 @@ def _update_params_temporal(params: dict, temporal_dict: dict) -> bool:
     return True
 
 
-def _update_params(params: dict, param_dict: dict) -> bool:
+def _update_params(params: dict[str, Any], param_dict: dict[str, Any]) -> bool:
     """
     Update the params dict with the values from param_dict if the value is not None.
 
@@ -183,7 +187,7 @@ def _update_params(params: dict, param_dict: dict) -> bool:
     return update
 
 
-def _filter_operator(qb: QueryBuilder, params: dict, filter_dict: dict, operator: str) -> None:
+def _filter_operator(qb: QueryBuilder, params: dict[str, Any], filter_dict: dict[str, Any], operator: str) -> None:
     """
     Add WHERE clauses to the query builder, depending on the provided parameters.
 
