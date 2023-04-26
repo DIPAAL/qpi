@@ -1,5 +1,4 @@
 SELECT ft.trajectory_sub_id,
-
        timestamp_from_date_time_id(ft.start_date_id, ft.start_time_id) as start_timestamp,
        timestamp_from_date_time_id(ft.end_date_id, ft.end_time_id) as end_timestamp,
        (

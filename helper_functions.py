@@ -120,7 +120,7 @@ def response(query: str, dw: Session, params: dict) -> list[dict]:
 
 def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> List[Any]:
     """
-    Get the values from an enum list.
+    Get a list of values from a list of enums.
 
     Args:
         enum_list: A list of enums.
@@ -128,5 +128,5 @@ def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Typ
 
     Returns: A list of values from an enum list.
     """
-    if enum_list:
+    if enum_list:  # As enum_list can be None
         return [enum_type(value).value for value in enum_list]

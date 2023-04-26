@@ -2,7 +2,7 @@
 from enum import Enum
 
 
-class ContentType(str, Enum):
+class TimeSeriesRepresentation(str, Enum):
     """The content type of the data."""
 
     GEOJSON = "GEOJSON"

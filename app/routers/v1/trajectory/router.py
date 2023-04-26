@@ -8,7 +8,7 @@ from app.querybuilder import QueryBuilder
 from helper_functions import response, get_values_from_enum_list
 from typing import Any
 import os
-from app.schemas.content_type import ContentType
+from app.schemas.time_series_representation import TimeSeriesRepresentation
 
 router = APIRouter()
 
@@ -26,7 +26,8 @@ async def get_trajectories_by_date_id_and_sub_id(
     qb.add_sql("select_date_id_and_sub_id.sql")
     final_query = qb.get_query_str()
 
-    # Returned as a JSON Array by FastAPI, which provides conversion of types to avoiding serialization issues.
+    # Returned as a JSON Array by FastAPI.
+    # FastAPI provides conversion of data types, such as Timestamp to string, or Interval to integer.
     return response(final_query, dw, params)
 
 
@@ -72,8 +73,9 @@ async def get_trajectories(
         stopped: bool | None = Query(default=None,
                                      description="If the trajectory must represents a stopped ship."
                                                  "\nIf not provided, both stopped and non-stopped ships are returned."),
-        content_type: ContentType = Query(default="MFJSON",
-                                          description="The content type of the trajectories in the response."),
+        content_type: TimeSeriesRepresentation = Query(default=TimeSeriesRepresentation.MFJSON,
+                                                       description="The time series representation of the trajectory "
+                                                                   "data in the response."),
         dw: Session = Depends(get_dw)
 ):
     """Get trajectories based on the provided parameters."""
@@ -119,7 +121,8 @@ async def get_trajectories(
 
     final_query = qb.get_query_str()
 
-    # Returned as a JSON Array by FastAPI, which provides conversion of types to avoiding serialization issues.
+    # Returned as a JSON Array by FastAPI.
+    # FastAPI provides conversion of data types, such as Timestamp to string, or Interval to integer.
     return response(final_query, dw, params)
 
 
