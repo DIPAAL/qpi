@@ -8,6 +8,7 @@ from app.routers.v1 import basic_sql, health
 from app.routers.v1.audit_log import audit_log
 from app.routers.v1.heatmap import heatmap
 from app.routers.v1.cell import cell
+from app.routers.v1.trajectory import router as trajectory
 from app.routers.v1.ship import router as ship
 from app.routers.v1.trajectory import router as trajectory
 

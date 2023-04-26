@@ -10,6 +10,7 @@ from typing import Any
 import os
 from app.schemas.time_series_representation import TimeSeriesRepresentation
 
+
 router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
@@ -73,6 +74,7 @@ async def get_trajectories(
         stopped: bool | None = Query(default=None,
                                      description="If the trajectory must represents a stopped ship."
                                                  "\nIf not provided, both stopped and non-stopped ships are returned."),
+
         content_type: TimeSeriesRepresentation = Query(default=TimeSeriesRepresentation.MFJSON,
                                                        description="The time series representation of the trajectory "
                                                                    "data in the response."),
