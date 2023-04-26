@@ -10,7 +10,6 @@ from app.routers.v1.heatmap import heatmap
 from app.routers.v1.cell import cell
 from app.routers.v1.trajectory import router as trajectory
 from app.routers.v1.ship import router as ship
-from app.routers.v1.trajectory import router as trajectory
 
 # Routers for different versions of the API can be added here
 # Remember to add the proper prefix and tags to the router
