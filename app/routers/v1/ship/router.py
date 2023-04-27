@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from app.querybuilder import QueryBuilder
-from helper_functions import response, get_values_from_enum_list
+from helper_functions import response_dict, get_values_from_enum_list
 from app.schemas.search_method_spatial import SearchMethodSpatial
 from app.schemas.mobile_type import MobileType
 from app.schemas.ship_type import ShipType
@@ -145,7 +145,7 @@ async def ships(
         ship_type_nin: List[ShipType] | None = Query(default=None,
                                                      description="Filter for ships without specified ship types"),
         # Search method
-        search_method: SearchMethodSpatial = Query(default="cell_1000m",
+        search_method: SearchMethodSpatial = Query(default=SearchMethodSpatial.cell_1000m,
                                                    description="Determines the search method used to find ships when "
                                                                "using spatial or temporal filters"),
         # Temporal bounds
@@ -255,10 +255,10 @@ async def ships(
 
     # All filter parameters for the ship type dimension.
     filter_params_ship_type = {
-        "mobile_type_in": get_values_from_enum_list(mobile_type_in, MobileType),
-        "mobile_type_nin": get_values_from_enum_list(mobile_type_nin, MobileType),
-        "ship_type_in": get_values_from_enum_list(ship_type_in, ShipType),
-        "ship_type_nin": get_values_from_enum_list(ship_type_nin, ShipType)
+        "mobile_type_in": get_values_from_enum_list(mobile_type_in, MobileType) if mobile_type_in else None,
+        "mobile_type_nin": get_values_from_enum_list(mobile_type_nin, MobileType) if mobile_type_nin else None,
+        "ship_type_in": get_values_from_enum_list(ship_type_in, ShipType) if ship_type_in else None,
+        "ship_type_nin": get_values_from_enum_list(ship_type_nin, ShipType) if ship_type_nin else None,
     }
 
     # Add filters to the query builder query and params dict
@@ -271,7 +271,7 @@ async def ships(
     # Finally, format all placeholders in the query, then collect the query string and return the response
     qb.format_query(placeholders)
     final_query = qb.get_query_str()
-    return JSONResponse(response(final_query, dw, params))
+    return JSONResponse(response_dict(final_query, dw, params))
 
 
 def add_trajectory_from_where_clause_to_query(qb: QueryBuilder, spatial_bounds: bool, temporal_bounds: bool) -> None:
@@ -382,4 +382,4 @@ async def ship_by_id(
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("ship_by_id.sql")
     final_query = qb.get_query_str()
-    return JSONResponse(response(final_query, dw, {"id": ship_id}))
+    return JSONResponse(response_dict(final_query, dw, {"id": ship_id}))

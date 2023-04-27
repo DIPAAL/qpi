@@ -6,7 +6,7 @@ from app.dependencies import get_dw
 from sqlalchemy.orm import Session
 from app.schemas.mobile_type import MobileType
 from app.querybuilder import QueryBuilder
-from helper_functions import response, get_values_from_enum_list
+from helper_functions import response_json, get_values_from_enum_list
 from typing import Any
 import os
 from app.schemas.time_series_representation import TimeSeriesRepresentation
@@ -30,7 +30,7 @@ async def get_trajectories_by_date_id_and_sub_id(
 
     # Returned as a JSON Array by FastAPI.
     # FastAPI provides conversion of data types, such as Timestamp to string, or Interval to integer.
-    return response(final_query, dw, params)
+    return JSONResponse(response_json(final_query, dw, params))
 
 
 @router.get("/trajectories/}")
@@ -75,17 +75,16 @@ async def get_trajectories(
         stopped: bool | None = Query(default=None,
                                      description="If the trajectory must represents a stopped ship."
                                                  "\nIf not provided, both stopped and non-stopped ships are returned."),
-
-        time_series_representation_type: TimeSeriesRepresentation = Query(default=TimeSeriesRepresentation.MFJSON,
-                                                                          description="The time series representation of the trajectory "
-                                                                   "data in the response."),
+        time_series_representation_type: TimeSeriesRepresentation =
+        Query(default=TimeSeriesRepresentation.MFJSON,
+              description="The time series representation of the trajectory data in the response."),
         dw: Session = Depends(get_dw)
 ):
     """Get trajectories based on the provided parameters."""
     params = {"offset": offset, "limit": limit}
     trajectory_params = {"infer_stopped": stopped}
     ship_params = {"mmsi": mmsi, "imo": imo, "name": name, "country": country, "callsign": callsign}
-    ship_type_params = {"mobile_type": get_values_from_enum_list(mobile_type, MobileType)}
+    ship_type_params = {"mobile_type": get_values_from_enum_list(mobile_type, MobileType) if mobile_type else None}
     nav_status_params = {"destination": destination}
     temporal_params = {"from_datetime": from_date, "to_datetime": to_date}
     # SRID is not required to be complete, and is therefore not part of this dict.
@@ -124,9 +123,7 @@ async def get_trajectories(
 
     final_query = qb.get_query_str()
 
-    # Returned as a JSON Array by FastAPI.
-    # FastAPI provides conversion of data types, such as Timestamp to string, or Interval to integer.
-    return response(final_query, dw, params)
+    return JSONResponse(response_json(final_query, dw, params))
 
 
 def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict[str, list[str | int]],

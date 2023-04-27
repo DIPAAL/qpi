@@ -1,6 +1,7 @@
 """Helper functions for Query Processing."""
 import configparser
 import os
+from fastapi.encoders import jsonable_encoder
 from datetime import datetime, timedelta
 from typing import Tuple, Callable, TypeVar, Any, List, Type
 from enum import Enum
@@ -105,7 +106,22 @@ def get_file_contents(path_from_root: str) -> str:
         return f.read()
 
 
-def response(query: str, dw: Session, params: dict) -> list[dict]:
+def response_json(query: str, dw: Session, params: dict) -> Any:
+    """
+    Convert the response from a query to JSON compatible format.
+
+    Args:
+        query: The query to execute.
+        dw: The data warehouse session.
+        params: The parameters to pass to the query.
+
+    Returns:
+        A JSON compatible response.
+    """
+    return jsonable_encoder(response_dict(query, dw, params))
+
+
+def response_dict(query: str, dw: Session, params: dict) -> list[dict]:
     """
     Return a list of dictionaries from a query.
 
@@ -118,7 +134,7 @@ def response(query: str, dw: Session, params: dict) -> list[dict]:
     return df.to_dict(orient="records")
 
 
-def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> List[Any]:
+def get_values_from_enum_list(enum_list: List[Enum], enum_type: Type[Enum]) -> List[Any]:
     """
     Get a list of values from a list of enums.
 
@@ -128,5 +144,4 @@ def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Typ
 
     Returns: A list of values from an enum list.
     """
-    if enum_list:  # As enum_list can be None
-        return [enum_type(value).value for value in enum_list]
+    return [enum_type(value).value for value in enum_list]
