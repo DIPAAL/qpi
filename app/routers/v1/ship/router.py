@@ -8,13 +8,12 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from app.dependencies import get_dw
 from app.querybuilder import QueryBuilder
-from helper_functions import response
+from helper_functions import response_dict, get_values_from_enum_list
 from app.schemas.search_method_spatial import SearchMethodSpatial
 from app.schemas.mobile_type import MobileType
 from app.schemas.ship_type import ShipType
-from typing import Any, List, Type
-from enum import Enum
-import datetime
+from typing import List
+from datetime import datetime
 import os
 
 router = APIRouter()
@@ -146,17 +145,17 @@ async def ships(
         ship_type_nin: List[ShipType] | None = Query(default=None,
                                                      description="Filter for ships without specified ship types"),
         # Search method
-        search_method: SearchMethodSpatial = Query(default="cell_1000m",
+        search_method: SearchMethodSpatial = Query(default=SearchMethodSpatial.cell_1000m,
                                                    description="Determines the search method used to find ships when "
                                                                "using spatial or temporal filters"),
         # Temporal bounds
-        from_datetime: datetime.datetime = Query(default=None,
-                                                 example="2021-01-01T00:00:00Z",
-                                                 description="Filter for ships with a first position after or at the "
-                                                             "given datetime"),
-        to_datetime: datetime.datetime = Query(default=None,
-                                               description="Filter for ships with a last position before or at the "
-                                                           "given datetime"),
+        from_datetime: datetime = Query(default=None,
+                                        example="2021-01-01T00:00:00Z",
+                                        description="Filter for ships with a first position after or at the "
+                                                    "given datetime"),
+        to_datetime: datetime = Query(default=None,
+                                      description="Filter for ships with a last position before or at the "
+                                                  "given datetime"),
         # Spatial bounds
         min_x: int = Query(default=None,
                            description="Filter for ships with a first position with a longitude greater than or equal "
@@ -256,10 +255,10 @@ async def ships(
 
     # All filter parameters for the ship type dimension.
     filter_params_ship_type = {
-        "mobile_type_in": get_values_from_enum_list(mobile_type_in, MobileType),
-        "mobile_type_nin": get_values_from_enum_list(mobile_type_nin, MobileType),
-        "ship_type_in": get_values_from_enum_list(ship_type_in, ShipType),
-        "ship_type_nin": get_values_from_enum_list(ship_type_nin, ShipType)
+        "mobile_type_in": get_values_from_enum_list(mobile_type_in, MobileType) if mobile_type_in else None,
+        "mobile_type_nin": get_values_from_enum_list(mobile_type_nin, MobileType) if mobile_type_nin else None,
+        "ship_type_in": get_values_from_enum_list(ship_type_in, ShipType) if ship_type_in else None,
+        "ship_type_nin": get_values_from_enum_list(ship_type_nin, ShipType) if ship_type_nin else None,
     }
 
     # Add filters to the query builder query and params dict
@@ -272,27 +271,7 @@ async def ships(
     # Finally, format all placeholders in the query, then collect the query string and return the response
     qb.format_query(placeholders)
     final_query = qb.get_query_str()
-    return JSONResponse(response(final_query, dw, params))
-
-
-def update_params_datetime_min_max_if_none(temporal_params: dict, temporal_bounds: bool,
-                                           from_datetime: datetime.datetime, to_datetime: datetime.datetime) -> None:
-    """
-    Update the temporal parameters to min and max datetime if the temporal bounds are provided, but not complete.
-
-    Args:
-        temporal_params (dict): The temporal parameters to update.
-        temporal_bounds (bool): If true, the temporal bounds are added to the temporal parameters.
-        from_datetime (datetime): The from datetime.
-        to_datetime (datetime): The to datetime.
-    """
-    if temporal_bounds and None in temporal_params.values():
-        if from_datetime is None:
-            temporal_params["from_date"] = datetime.datetime.min.strftime("%Y%m%d")
-            temporal_params["from_time"] = datetime.datetime.min.strftime("%H%M%S")
-        elif to_datetime is None:
-            temporal_params["to_date"] = datetime.datetime.max.strftime("%Y%m%d")
-            temporal_params["to_time"] = datetime.datetime.max.strftime("%H%M%S")
+    return JSONResponse(response_dict(final_query, dw, params))
 
 
 def add_trajectory_from_where_clause_to_query(qb: QueryBuilder, spatial_bounds: bool, temporal_bounds: bool) -> None:
@@ -342,7 +321,7 @@ def add_cell_from_where_clause_to_query(qb: QueryBuilder, placeholders: dict, se
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034)) && fc.st_bounding_box")
 
 
-def update_params_datetime(param_dict: dict, dt: datetime.datetime, from_or_to: str) -> None:
+def update_params_datetime(param_dict: dict, dt: datetime, from_or_to: str) -> None:
     """
     Update the given parameter dict with the given parameters.
 
@@ -359,33 +338,39 @@ def update_params_datetime(param_dict: dict, dt: datetime.datetime, from_or_to: 
         })
 
 
+def update_params_datetime_min_max_if_none(temporal_params: dict, temporal_bounds: bool,
+                                           from_datetime: datetime, to_datetime: datetime) -> None:
+    """
+    Update the temporal parameters to min and max datetime if the temporal bounds are provided, but not complete.
+
+    Args:
+        temporal_params (dict): The temporal parameters to update.
+        temporal_bounds (bool): If true, the temporal bounds are added to the temporal parameters.
+        from_datetime (datetime): The from datetime.
+        to_datetime (datetime): The to datetime.
+    """
+    if temporal_bounds and None in temporal_params.values():
+        if from_datetime is None:
+            temporal_params["from_date"] = datetime.min.strftime("%Y%m%d")
+            temporal_params["from_time"] = datetime.min.strftime("%H%M%S")
+        elif to_datetime is None:
+            temporal_params["to_date"] = datetime.max.strftime("%Y%m%d")
+            temporal_params["to_time"] = datetime.max.strftime("%H%M%S")
+
+
 def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict) -> None:
     """Add filters to the query builder from the given parameters and add the parameters to the params dict.
 
     Args:
-        qb: The query builder object.
-        relation_name: The name of the relation to add the filters to.
-        filter_params: The parameters to add as filters.
-        params: The parameters dict to add the filter parameters to.
+        qb (QueryBuilder): The query builder object.
+        relation_name (str): The name of the relation to add the filters to.
+        filter_params (dict): The parameters to add as filters.
+        params (dict): The parameters to add the filter parameters to.
     """
     for key, value in filter_params.items():
         if value:  # Only add the filter if the parameter has a value
             param_name = key.rsplit("_", 1)[0]
             qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
-
-
-def get_values_from_enum_list(enum_list: List[Type[Enum]] | None, enum_type: Type[Enum]) -> list[Any]:
-    """
-    Get the values from an enum list.
-
-    Args:
-        enum_list: A list of enums.
-        enum_type: The type of the enums in the list.
-
-    Returns: A list of values from an enum list.
-    """
-    if enum_list:
-        return [enum_type(value).value for value in enum_list]
 
 
 @router.get("/{ship_id}")
@@ -397,4 +382,4 @@ async def ship_by_id(
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("ship_by_id.sql")
     final_query = qb.get_query_str()
-    return JSONResponse(response(final_query, dw, {"id": ship_id}))
+    return JSONResponse(response_dict(final_query, dw, {"id": ship_id}))
