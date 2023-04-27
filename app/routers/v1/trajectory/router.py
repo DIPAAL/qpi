@@ -76,8 +76,8 @@ async def get_trajectories(
                                      description="If the trajectory must represents a stopped ship."
                                                  "\nIf not provided, both stopped and non-stopped ships are returned."),
 
-        content_type: TimeSeriesRepresentation = Query(default=TimeSeriesRepresentation.MFJSON,
-                                                       description="The time series representation of the trajectory "
+        time_series_representation_type: TimeSeriesRepresentation = Query(default=TimeSeriesRepresentation.MFJSON,
+                                                                          description="The time series representation of the trajectory "
                                                                    "data in the response."),
         dw: Session = Depends(get_dw)
 ):
@@ -94,9 +94,9 @@ async def get_trajectories(
     qb = QueryBuilder(SQL_PATH)
 
     # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
-    if content_type.MFJSON:
+    if time_series_representation_type.MFJSON:
         qb.add_sql("select_MFJSON.sql")
-    elif content_type.GEOJSON:
+    elif time_series_representation_type.GEOJSON:
         qb.add_sql("select_GeoJSON.sql")
 
     # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
