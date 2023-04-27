@@ -1,6 +1,7 @@
 """Router for all trajectory endpoints."""
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, HTTPException, Path
+from fastapi.responses import JSONResponse
 from app.dependencies import get_dw
 from sqlalchemy.orm import Session
 from app.schemas.mobile_type import MobileType
@@ -134,9 +135,9 @@ def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict[str, list[str 
     Add JOIN clauses for attributes related to ships and ship types to the query builder, if applicable.
 
     Args:
-        qb (QueryBuilder): The query builder to add the JOIN clauses to.
-        ship_params (dict): The parameters for the ship.
-        ship_type_params (dict): The parameters for the ship type.
+        qb: The query builder to add the JOIN clauses to.
+        ship_params: The parameters for the ship.
+        ship_type_params: The parameters for the ship type.
     """
     ship_sql_str = "JOIN dim_ship ds on ft.ship_id = ds.ship_id"
     ship_type_sql_str = "JOIN dim_ship_type dst on ds.ship_type_id = dst.ship_type_id"
@@ -158,8 +159,8 @@ def _update_params_temporal(params: dict[str, Any], temporal_dict: dict[str, dat
     If only one of the values is provided, the other is set to the min or max value.
 
     Args:
-        params (dict): The params dict to add the values to.
-        temporal_dict (dict): The dict containing the temporal values to add.
+        params: The params dict to add the values to.
+        temporal_dict: The dict containing the temporal values to add.
     """
     if temporal_dict["from_datetime"] is None and temporal_dict["to_datetime"] is None:
         return False
@@ -178,8 +179,8 @@ def _update_params(params: dict[str, Any], param_dict: dict[str, Any]) -> bool:
     Update the params dict with the values from param_dict if the value is not None.
 
     Args:
-        params (dict): The params dict to add the values to.
-        param_dict (dict): The dict containing the potential values to add.
+        params: The params dict to add the values to.
+        param_dict: The dict containing the potential values to add.
 
     Returns:
         bool: True if any value was added to the params dict, False otherwise.
@@ -197,10 +198,10 @@ def _filter_operator(qb: QueryBuilder, params: dict[str, Any], filter_dict: dict
     Add WHERE clauses to the query builder, depending on the provided parameters.
 
      Args:
-         qb (QueryBuilder): The QueryBuilder object to add the WHERE clauses to.
-         params (dict): The params dict to add the values to.
-         filter_dict (dict): The dict containing the values to filter on.
-         operator (str): The operator to use in the WHERE clause.
+         qb: The QueryBuilder object to add the WHERE clauses to.
+         params: The params dict to add the values to.
+         filter_dict: The dict containing the values to filter on.
+         operator: The operator to use in the WHERE clause.
     """
     for relation, param_dict in filter_dict.items():
         for key, value in param_dict.items():
@@ -213,9 +214,9 @@ def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bo
     Add temporal and spatial filters to the query if bounds are provided.
 
     Args:
-        qb (QueryBuilder): The QueryBuilder object to add the WHERE/AND clause to.
-        spatial_bounds (bool): True if spatial bounds are provided, False otherwise.
-        temporal_bounds (bool): True if temporal bounds are provided, False otherwise.
+        qb: The QueryBuilder object to add the WHERE/AND clause to.
+        spatial_bounds: True if spatial bounds are provided, False otherwise.
+        temporal_bounds: True if temporal bounds are provided, False otherwise.
     """
     bound_placeholder = ""
     if temporal_bounds or spatial_bounds:

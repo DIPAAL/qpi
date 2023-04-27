@@ -90,7 +90,7 @@ def get_file_path(path_from_root: str) -> str:
     """Get the path to a file from the root directory.
 
     Args:
-        path_from_root (str): The path to the file from the root directory.
+        path_from_root: The path to the file from the root directory.
     """
     return os.path.join(ROOT_DIR, f'{path_from_root}')
 
@@ -99,7 +99,7 @@ def get_file_contents(path_from_root: str) -> str:
     """Get the contents of a file from the root directory.
 
     Args:
-        path_from_root (str): The path to the file from the root directory.
+        path_from_root: The path to the file from the root directory.
     """
     with open(get_file_path(path_from_root), 'r') as f:
         return f.read()
@@ -110,9 +110,9 @@ def response(query: str, dw: Session, params: dict) -> list[dict]:
     Return a list of dictionaries from a query.
 
     Args:
-        query (str): The query to execute.
-        dw (Session): The data warehouse session.
-        params (dict): The parameters to pass to the query.
+        query: The query to execute.
+        dw: The data warehouse session.
+        params: The parameters to pass to the query.
     """
     df = pd.read_sql(text(query), dw.bind.connect(), params=params)
     return df.to_dict(orient="records")
