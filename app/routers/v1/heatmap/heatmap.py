@@ -179,6 +179,10 @@ def get_enc_cell_min_max(db: Session, enc_cell: EncCell, min_x, min_y, max_x, ma
                 ST_YMax(geom) AS max_y
             FROM reference_geometries WHERE name = :name AND type = 'enc';
         """), {"name": enc_cell.value}).fetchone()
+
+    # commit the transaction, as citus will tend to not create new connections to workers if not committed.
+    db.commit()
+
     return enc_cell_result.min_x, enc_cell_result.min_y, enc_cell_result.max_x, enc_cell_result.max_y
 
 
