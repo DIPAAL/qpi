@@ -6,7 +6,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.schemas.message import Message
 from app.dependencies import get_dw
-from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -16,7 +15,6 @@ router = APIRouter()
             })
 async def health(db: Session = Depends(get_dw)):
     """Check the health of the API, by verifying that the data warehouse is accessible."""
-    db.execute(text("SELECT 1")).fetchone()[0] == 1
     try:
         db.execute(text("SELECT 1")).fetchone()[0] == 1
     except Exception:
