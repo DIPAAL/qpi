@@ -9,6 +9,7 @@ from app.dependencies import get_dw
 
 router = APIRouter()
 
+
 @router.get("", response_model=Message,
             responses={
                 503: {"model": Message}
