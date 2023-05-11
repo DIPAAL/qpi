@@ -3,7 +3,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
 from app.schemas.direction import Direction
-from app.schemas.ship import Ship
+from app.schemas.cellship import CellShip
 
 
 class FactCell(BaseModel):
@@ -23,4 +23,4 @@ class FactCell(BaseModel):
     delta_heading: float = Field(description='Describes how much the heading of the ship changed while within the cell')
     draught: float | None = Field(description='The maximum draught set by the ship while within the cell')
     stopped: bool = Field(description='Indicated whether the ship has been inferred to be stopped within the cell')
-    ship: Ship = Field(description='Information about the cell that created the cell fact')
+    ship: CellShip = Field(description='Information about the cell that created the cell fact')
