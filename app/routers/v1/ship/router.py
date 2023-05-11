@@ -14,6 +14,7 @@ from app.schemas.mobile_type import MobileType
 from app.schemas.ship_type import ShipType
 from typing import List
 from datetime import datetime
+from app.schemas.ship import Ship
 import os
 
 router = APIRouter()
@@ -21,7 +22,7 @@ router = APIRouter()
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
 
-@router.get("/")
+@router.get("/", response_model=List[Ship])
 async def ships(
         # Pagination
         offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
@@ -373,7 +374,7 @@ def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_
             qb.add_where(relation_name + param_name, qb.get_sql_operator(key), value, params)
 
 
-@router.get("/{ship_id}")
+@router.get("/{ship_id}",  response_model=Ship)
 async def ship_by_id(
         ship_id: int = Path(description="The ship ID for a ship in the data warehouse"),
         dw: Session = Depends(get_dw)
