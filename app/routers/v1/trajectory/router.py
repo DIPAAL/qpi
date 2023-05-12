@@ -40,8 +40,8 @@ async def get_trajectories_by_date_id_and_sub_id(
 
 @router.get("/trajectories/", response_model=list[GeoJSONTotalTrajectory] | list[MFJSONTotalTrajectory])
 async def get_trajectories(
-        offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
-        limit: int = Query(default=10, description="Limit the number of ships returned by the request to X"),
+        offset: int = Query(default=0, description="Exclude the first N results of the collection."),
+        limit: int = Query(default=10, description="Limits the number of results returned in the collection to N."),
         x_min: float | None = Query(default=None,
                                     description='Defines the "left side" of the bounding rectangle,'
                                                 ' coordinates must match the provided "srid"'),
