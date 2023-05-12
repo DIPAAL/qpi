@@ -14,13 +14,13 @@ from app.routers.v1.ship import router as ship
 # Routers for different versions of the API can be added here
 # Remember to add the proper prefix and tags to the router
 router_v1 = APIRouter(prefix="/api/v1")
-router_v1.include_router(basic_sql.router, prefix="/table", tags=["basic_sql"])
 router_v1.include_router(health.router, prefix="/health", tags=["health"])
-router_v1.include_router(ship.router, prefix="/ships", tags=["ships"])
 router_v1.include_router(heatmap.router, prefix="/heatmap", tags=["heatmap"])
-router_v1.include_router(cell.router, prefix='/cells', tags=['cell'])
-router_v1.include_router(audit_log.router, prefix="/audit_log", tags=["audit_log"])
 router_v1.include_router(trajectory.router, prefix="/trajectory", tags=["trajectory"])
+router_v1.include_router(cell.router, prefix='/cells', tags=['cell'])
+router_v1.include_router(ship.router, prefix="/ships", tags=["ships"])
+router_v1.include_router(audit_log.router, prefix="/audit_log", tags=["audit_log"])
+router_v1.include_router(basic_sql.router, prefix="/table", tags=["basic_sql"])
 
 # The main router for the API app. This router is imported in api_main
 router_main = APIRouter()

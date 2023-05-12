@@ -15,7 +15,7 @@ router = APIRouter()
                 503: {"model": Message}
             })
 async def health(db: Session = Depends(get_dw)):
-    """Check the health of the API, by verifying that the data warehouse is accessible."""
+    """Check the health of the API, verifying that the data warehouse is accessible."""
     try:
         db.execute(text("SELECT 1")).fetchone()[0] == 1
     except Exception:

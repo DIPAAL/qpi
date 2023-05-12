@@ -7,9 +7,10 @@ from sqlalchemy.orm import Session
 from app.schemas.mobile_type import MobileType
 from app.querybuilder import QueryBuilder
 from helper_functions import response_json, get_values_from_enum_list
-from typing import Any
+from typing import Any, Union
 import os
 from app.schemas.time_series_representation import TimeSeriesRepresentation
+from app.schemas.trajectory import GeoJSONTotalTrajectory, MFJSONTotalTrajectory
 
 
 router = APIRouter()
@@ -17,12 +18,16 @@ router = APIRouter()
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
 
-@router.get("/trajectories/{date_id}/{sub_id}")
+@router.get("/trajectories/{date_id}/{sub_id}", response_model=MFJSONTotalTrajectory)
 async def get_trajectories_by_date_id_and_sub_id(
-        date_id: int = Path(description="The date id of the trajectory.", example=20070110),
+        date_id: int = Path(description="The start date id of the trajectory.", example=20070110),
         sub_id: str = Path(description="The sub id of the trajectory.", example=49396455),
         dw=Depends(get_dw)):
-    """Get a single trajectory from a start date id and trajectory sub id."""
+    """
+    Get a single trajectory from a start date id and trajectory sub id.
+
+    The trajectory is returned as a MFJSON object.
+    """
     params = {"date_id": date_id, "sub_id": sub_id}
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("select_date_id_and_sub_id.sql")
@@ -33,7 +38,7 @@ async def get_trajectories_by_date_id_and_sub_id(
     return JSONResponse(response_json(final_query, dw, params))
 
 
-@router.get("/trajectories/")
+@router.get("/trajectories/", response_model=Union[GeoJSONTotalTrajectory, MFJSONTotalTrajectory])
 async def get_trajectories(
         offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
         limit: int = Query(default=10, description="Limit the number of ships returned by the request to X"),
@@ -93,9 +98,9 @@ async def get_trajectories(
     qb = QueryBuilder(SQL_PATH)
 
     # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
-    if time_series_representation_type.MFJSON:
+    if time_series_representation_type == TimeSeriesRepresentation.MFJSON:
         qb.add_sql("select_MFJSON.sql")
-    elif time_series_representation_type.GEOJSON:
+    elif time_series_representation_type == TimeSeriesRepresentation.GeoJSON:
         qb.add_sql("select_GeoJSON.sql")
 
     # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
