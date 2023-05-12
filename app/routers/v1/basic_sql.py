@@ -13,19 +13,13 @@ router = APIRouter()
 
 @router.get("/", response_model=list[str])
 def table():
-    """
-    Get a list of tables in the database.
-    """
+    """Get a list of tables in the database."""
     return [table.value for table in DWRELATION]
 
-class count_rows():
-    pass
 
 @router.get("/{table}/count", response_model=CountRows)
 def count_rows(table: DWRELATION, db: Session = Depends(get_dw)):
-    """
-    Get the number of rows in the given table.
-    """
+    """Get the number of rows in the given table."""
     return {
         "count": db.execute(text(f"SELECT COUNT(*) FROM {table.name}")).fetchone()[0]
     }
@@ -33,9 +27,7 @@ def count_rows(table: DWRELATION, db: Session = Depends(get_dw)):
 
 @router.get("/{table}/columns", response_model=ColumnNames)
 def column_names(table: DWRELATION, db=Depends(get_dw)):
-    """
-    Get the column names of a given table.
-    """
+    """Get the column names of a given table."""
     return {
         "columns": [column for column in db.execute(text(f"SELECT * FROM {table.name} LIMIT 0")).keys()]
     }

@@ -49,9 +49,7 @@ def cell_facts(
                                                            'collection to N.'),
         offset: int = Query(default=0, ge=0, description='Exclude the first N results of the collection.'),
         dw: Session = Depends(get_dw)):
-    """
-    Get cell facts based on the given parameters.
-    """
+    """Get cell facts based on the given parameters."""
     with open(os.path.join(current_file_path, 'sql/fact_cell_extract.sql')) as file:
         query = file.read().format(CELL_SIZE=int(cell_size))
 

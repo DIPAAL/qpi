@@ -24,8 +24,6 @@ class AuditLog(Base):
     requirements = Column(ARRAY(String))
 
 
-
-
 class AuditLogOutput(BaseModel):
     """Pydantic model for portraying the audit log output."""
 
@@ -57,7 +55,7 @@ class AuditLogOutput(BaseModel):
     ]
     audit_id: int = 1
     import_datetime: datetime = datetime(2023, 5, 12, 13, 51, 6, 656838)
-    date_id: int  = 20220101
+    date_id: int = 20220101
     statistics: dict = {
         "rows": {
             "file": 1000,
@@ -102,4 +100,6 @@ class AuditLogOutput(BaseModel):
     file_name: str = "aisdk-sampleSmall-2022.csv"
 
     class Config:
+        """Pydantic model configuration."""
+
         orm_mode = True
