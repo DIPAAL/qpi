@@ -18,7 +18,6 @@ async def get_audit_logs(
 
 
 @router.get("/{date_id}", response_model=list[AuditLogOutput])
-async def get_audit_logs_by_date_id(date_id: int,
-        dw=Depends(get_dw)):
+async def get_audit_logs_by_date_id(date_id: int, dw=Depends(get_dw)):
     """Get audit logs for a given date id."""
     return dw.query(AuditLog).filter(AuditLog.date_id == date_id).all()

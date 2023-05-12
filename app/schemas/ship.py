@@ -1,7 +1,8 @@
 """Model representing a ship in the DIPAAL data warehouse."""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from app.schemas.mobile_type import MobileType
 from app.schemas.ship_type import ShipType
+
 
 class Ship(BaseModel):
     """Ship Model."""

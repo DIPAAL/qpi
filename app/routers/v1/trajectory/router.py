@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.schemas.mobile_type import MobileType
 from app.querybuilder import QueryBuilder
 from helper_functions import response_json, get_values_from_enum_list
-from typing import Any, Union
+from typing import Any
 import os
 from app.schemas.time_series_representation import TimeSeriesRepresentation
 from app.schemas.trajectory import GeoJSONTotalTrajectory, MFJSONTotalTrajectory
