@@ -27,7 +27,7 @@ def count_rows(table: DWRELATION, db: Session = Depends(get_dw)):
     Get the number of rows in the given table.
     """
     return {
-        "count": db.execute(text(f"SELECT COUNT(*) FROM {table.name}")).fetchall()[0][0]
+        "count": db.execute(text(f"SELECT COUNT(*) FROM {table.name}")).fetchone()[0]
     }
 
 
