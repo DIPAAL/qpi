@@ -38,7 +38,7 @@ async def get_trajectories_by_date_id_and_sub_id(
     return JSONResponse(response_json(final_query, dw, params))
 
 
-@router.get("/trajectories/", response_model=Union[GeoJSONTotalTrajectory, MFJSONTotalTrajectory])
+@router.get("/trajectories/", response_model=Union[list[GeoJSONTotalTrajectory], list[MFJSONTotalTrajectory]])
 async def get_trajectories(
         offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
         limit: int = Query(default=10, description="Limit the number of ships returned by the request to X"),
