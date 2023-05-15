@@ -4,7 +4,7 @@ import io
 import datetime
 import os
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Path
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
 import pandas as pd
@@ -22,7 +22,9 @@ from app.schemas.spatial_resolution import SpatialResolution
 from app.schemas.temporal_resolution import TemporalResolution
 from app.schemas.enc_enum import EncCell
 from app.schemas.multi_output_format import MultiOutputFormat
+from app.schemas.heatmapmeta import HeatmapMetadata
 from helper_functions import measure_time
+
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -33,9 +35,10 @@ temporal_resolution_names = {
 }
 
 
-@router.get("")
+@router.get("", response_model=dict[str, HeatmapMetadata])
+#@router.get("")
 def metadata(db: Session = Depends(get_dw)):
-    """Return the available heatmaps."""
+    """Return all heatmaps available in the DW."""
     with open(os.path.join(current_file_path, "sql/available_heatmaps.sql"), "r") as f:
         query = f.read()
 
@@ -78,8 +81,10 @@ def metadata(db: Session = Depends(get_dw)):
 @router.get("/single/{heatmap_type}/{spatial_resolution}", response_class=PlainTextResponse)
 def single_heatmap(
         spatial_resolution: SpatialResolution,
-        mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
-        ship_types: list[ShipType] = Query(default=[ship_type for ship_type in ShipType]),
+        mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
+                                               description="Limits what mobile type of ships they belong to."),
+        ship_types: list[ShipType] = Query(default=[ship_type for ship_type in ShipType],
+                                           description=""),
         output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff),
         min_x: int = Query(default=3600000),
         min_y: int = Query(default=3030000),
@@ -89,7 +94,7 @@ def single_heatmap(
         enc_cell: EncCell = Query(default=None),
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
         end: datetime.datetime = Query(default="2022-02-01T00:00:00Z"),
-        heatmap_type: HeatmapType = HeatmapType.count,
+        heatmap_type: HeatmapType = HeatmapType.count, # Path parameter
         dw=Depends(get_dw)):
     """Return a single heatmap."""
     if srid != 3034:
