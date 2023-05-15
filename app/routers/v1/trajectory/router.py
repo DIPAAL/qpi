@@ -12,7 +12,6 @@ import os
 from app.schemas.time_series_representation import TimeSeriesRepresentation
 from app.schemas.trajectory import GeoJSONTotalTrajectory, MFJSONTotalTrajectory
 
-
 router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
