@@ -24,7 +24,7 @@ class AuditLog(Base):
     requirements = Column(ARRAY(String))
 
 
-class AuditLogOutput(BaseModel):
+class AuditLogResponse(BaseModel):
     """Pydantic model for portraying the audit log output."""
 
     file_size: int = 139919
