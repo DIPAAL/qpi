@@ -158,16 +158,16 @@ async def ships(
                                       description="Filter for ships with a last position before or at the "
                                                   "given datetime"),
         # Spatial bounds
-        min_x: int = Query(default=None,
+        x_min: int = Query(default=None,
                            description="Filter for ships with a first position with a longitude greater than or equal "
                                        "to the given value"),
-        min_y: int = Query(default=None,
+        y_min: int = Query(default=None,
                            description="Filter for ships with a first position with a latitude greater than or equal "
                                        "to the given value"),
-        max_x: int = Query(default=None,
+        x_max: int = Query(default=None,
                            description="Filter for ships with a first position with a longitude less than or equal "
                                        "to the given value"),
-        max_y: int = Query(default=None,
+        y_max: int = Query(default=None,
                            description="Filter for ships with a first position with a latitude less than or equal "
                                        "to the given value"),
         # The data warehouse Session
@@ -195,7 +195,7 @@ async def ships(
     qb.add_sql("select_ship.sql")
 
     # Setup of spatial bounds if provided
-    spatial_params: dict = {"xmin": min_x, "ymin": min_y, "xmax": max_x, "ymax": max_y}
+    spatial_params: dict = {"xmin": x_min, "ymin": y_min, "xmax": x_max, "ymax": y_max}
     spatial_bounds = True if any(value is not None for value in spatial_params.values()) else False
 
     # If spatial bounds are provided, but not complete, raise an error
