@@ -91,13 +91,13 @@ def single_heatmap(
                                            description="Limits what ship type the ships must belong to."),
         output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff,
                                                   description="The output format of the heatmap."),
-        min_x: int = Query(default=3600000, description='Defines the "left side" of the bounding rectangle, '
+        x_min: int = Query(default=3600000, description='Defines the "left side" of the bounding rectangle, '
                                                         'coordinates must match the provided "srid" parameter.'),
-        min_y: int = Query(default=3030000, description='Defines the "bottom side" of the bounding rectangle, '
+        y_min: int = Query(default=3030000, description='Defines the "bottom side" of the bounding rectangle, '
                                                         'coordinates must match the provided "srid" parameter.'),
-        max_x: int = Query(default=4395000, description='Defines the "right side" of the bounding rectangle, '
+        x_max: int = Query(default=4395000, description='Defines the "right side" of the bounding rectangle, '
                                                         'coordinates must match the provided "srid" parameter.'),
-        max_y: int = Query(default=3485000, description='Defines the "top side" of the bounding rectangle, '
+        y_max: int = Query(default=3485000, description='Defines the "top side" of the bounding rectangle, '
                                                         'coordinates must match the provided "srid" parameter.'),
         srid: int = Query(default=3034, description='The spatial reference system for the heatmap. '
                                                     'Currently only EPSG:3034 is supported.'),
@@ -117,8 +117,8 @@ def single_heatmap(
     with open(os.path.join(current_file_path, "sql/single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
-        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
+    spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
     start_date_id = int(start.strftime("%Y%m%d"))
     end_date_id = int(end.strftime("%Y%m%d"))
@@ -126,14 +126,14 @@ def single_heatmap(
     params = {
         'width': width,
         'height': height,
-        'min_x': min_x,
-        'min_y': min_y,
-        'max_x': max_x,
-        'max_y': max_y,
-        'min_cell_x': int(min_x / 5000),
-        'min_cell_y': int(min_y / 5000),
-        'max_cell_x': int(max_x / 5000),
-        'max_cell_y': int(max_y / 5000),
+        'min_x': x_min,
+        'min_y': y_min,
+        'max_x': x_max,
+        'max_y': y_max,
+        'min_cell_x': int(x_min / 5000),
+        'min_cell_y': int(y_min / 5000),
+        'max_cell_x': int(x_max / 5000),
+        'max_cell_y': int(y_max / 5000),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'mobile_types': mobile_types,
@@ -263,16 +263,16 @@ def mapalgebra_heatmap(
                                                 description='A PostgreSQL algebraic expression only involving the '
                                                             'first raster, that defines what to return when the second '
                                                             'raster has no data.'),
-        min_x: int = Query(default=3600000,
+        x_min: int = Query(default=3600000,
                            description='Defines the "left side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
-        min_y: int = Query(default=3030000,
+        y_min: int = Query(default=3030000,
                            description='Defines the "bottom side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
-        max_x: int = Query(default=4395000,
+        x_max: int = Query(default=4395000,
                            description='Defines the "right side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
-        max_y: int = Query(default=3485000,
+        y_max: int = Query(default=3485000,
                            description='Defines the "top side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
         srid: int = Query(default=3034,
@@ -309,8 +309,8 @@ def mapalgebra_heatmap(
     with open(os.path.join(current_file_path, "sql/mapalgebra_single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
-        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
+    spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
     first_start_date_id = int(first_start.strftime("%Y%m%d"))
     first_end_date_id = int(first_end.strftime("%Y%m%d"))
@@ -320,14 +320,14 @@ def mapalgebra_heatmap(
     params = {
         'width': width,
         'height': height,
-        'min_x': min_x,
-        'min_y': min_y,
-        'max_x': max_x,
-        'max_y': max_y,
-        'min_cell_x': int(min_x / 5000),
-        'min_cell_y': int(min_y / 5000),
-        'max_cell_x': int(max_x / 5000),
-        'max_cell_y': int(max_y / 5000),
+        'min_x': x_min,
+        'min_y': y_min,
+        'max_x': x_max,
+        'max_y': y_max,
+        'min_cell_x': int(x_min / 5000),
+        'min_cell_y': int(y_min / 5000),
+        'max_cell_x': int(x_max / 5000),
+        'max_cell_y': int(y_max / 5000),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'map_algebra_expr': map_algebra_expr,
@@ -381,16 +381,16 @@ def multi_heatmap(
                                                  description='The output format of result.'),
         fps: int = Query(default=10,
                          description='The frames per second of the result. Only applicable for mp4 output format.'),
-        min_x: int = Query(default=3600000,
+        x_min: int = Query(default=3600000,
                            description='Defines the "left side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
-        min_y: int = Query(default=3030000,
+        y_min: int = Query(default=3030000,
                            description='Defines the "bottom side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
-        max_x: int = Query(default=4395000,
+        x_max: int = Query(default=4395000,
                            description='Defines the "right side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
-        max_y: int = Query(default=3485000,
+        y_max: int = Query(default=3485000,
                            description='Defines the "top side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
         srid: int = Query(default=3034,
@@ -417,8 +417,8 @@ def multi_heatmap(
     with open(os.path.join(current_file_path, f"sql/multi_heatmaps/{temporal_resolution.value}.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
-        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
+    spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
     start_date_id = int(start.strftime("%Y%m%d"))
     end_date_id = int(end.strftime("%Y%m%d"))
@@ -426,14 +426,14 @@ def multi_heatmap(
     params = {
         'width': width,
         'height': height,
-        'min_x': min_x,
-        'min_y': min_y,
-        'max_x': max_x,
-        'max_y': max_y,
-        'min_cell_x': int(min_x / 5000),
-        'min_cell_y': int(min_y / 5000),
-        'max_cell_x': int(max_x / 5000),
-        'max_cell_y': int(max_y / 5000),
+        'min_x': x_min,
+        'min_y': y_min,
+        'max_x': x_max,
+        'max_y': y_max,
+        'min_cell_x': int(x_min / 5000),
+        'min_cell_y': int(y_min / 5000),
+        'max_cell_x': int(x_max / 5000),
+        'max_cell_y': int(y_max / 5000),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'mobile_types': mobile_types,
