@@ -37,7 +37,7 @@ temporal_resolution_names = {
 
 @router.get("", response_model=dict[str, HeatmapMetadata])
 def metadata(db: Session = Depends(get_dw)):
-    """Return all heatmaps available in the DW."""
+    """Return all heatmaps that are available in the DW."""
     with open(os.path.join(current_file_path, "sql/available_heatmaps.sql"), "r") as f:
         query = f.read()
 
@@ -256,13 +256,13 @@ def mapalgebra_heatmap(
                                                   'functions/operators that defines the pixel value when pixels '
                                                   'intersect.'),
         map_algebra_no_data_1_expr: str = Query(default="[rast2.val]",
-                                                description='A algebraic expression only involving the second raster, '
-                                                            'that defines what to return when the first raster has no '
-                                                            'data.'),
+                                                description='A PostgreSQL algebraic expression only involving the '
+                                                            'second raster, that defines what to return when the first '
+                                                            'raster has no data.'),
         map_algebra_no_data_2_expr: str = Query(default="-[rast1.val]",
-                                                description='A algebraic expression only involving the first raster, '
-                                                            'that defines what to return when the second raster has no '
-                                                            'data.'),
+                                                description='A PostgreSQL algebraic expression only involving the '
+                                                            'first raster, that defines what to return when the second '
+                                                            'raster has no data.'),
         min_x: int = Query(default=3600000,
                            description='Defines the "left side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
@@ -285,17 +285,21 @@ def mapalgebra_heatmap(
         first_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                                  description='The ship types to include in the first raster.'),
         first_start: datetime.datetime = Query(default="2021-01-01T00:00:00Z",
-                                               description='The start of the time interval for the first raster.'),
+                                               description='The inclusive start of the temporal bound for the '
+                                                           'first raster.'),
         first_end: datetime.datetime = Query(default="2021-02-01T00:00:00Z",
-                                             description='The end of the time interval for the first raster.'),
+                                             description='The inclusive end of the temporal bound for the '
+                                                         'first raster.'),
         second_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
                                                       description='The mobile types to include in the second raster.'),
         second_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                                   description='The ship types to include in the second raster.'),
         second_start: datetime.datetime = Query(default="2021-07-01T00:00:00Z",
-                                                description='The start of the time interval for the second raster.'),
+                                                description='The inclusive start of the temporal bound for the '
+                                                            'second raster.'),
         second_end: datetime.datetime = Query(default="2021-08-01T00:00:00Z",
-                                              description='The end of the time interval for the second raster.'),
+                                              description='The inclusive end of the temporal bound for the '
+                                                          'second raster.'),
         dw=Depends(get_dw)
 ):
     """Return a single mapalgebra heatmap, based on the parameters provided."""
