@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from app.dependencies import get_dw
-from app.schemas.cell_fact import FactCell
+from app.schemas.fact_cell import FactCell
 from app.schemas.spatial_resolution import SpatialResolution
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query
