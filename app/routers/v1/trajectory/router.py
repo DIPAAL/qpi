@@ -66,7 +66,7 @@ async def get_trajectories(
         callsign: list[str] | None = Query(default=None,
                                            description="Limits what callsign the ships must sails under."),
         mobile_type: list[MobileType] | None = Query(default=None,
-                                                     description="Limits what mobile type of ships they belong to."
+                                                     description="Limits what mobile type the ships must belong to."
                                                                  "\nIf not provided, all mobile types are included."),
         srid: int = Query(default=4326,
                           description="The spatial reference system for the trajectory."),
