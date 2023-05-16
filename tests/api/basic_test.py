@@ -16,4 +16,4 @@ def test_heartbeat_pass():
     with TestClient(app) as client:
         response = client.get("/api/v1/health")
         assert response.status_code == 200
-        assert response.json()['status'] == 'pass'
+        assert response.json() == {"message": "Data warehouse is accessible."}
