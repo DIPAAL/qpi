@@ -10,14 +10,14 @@ from helper_functions import response_json, get_values_from_enum_list
 from typing import Any
 import os
 from app.schemas.time_series_representation import TimeSeriesRepresentation
-from app.schemas.trajectory import GeoJSONTotalTrajectory, MFJSONTotalTrajectory
+from app.schemas.trajectory import GeoJSONTrajectoryResponse, MFJSONTrajectoryResponse
 
 router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
 
-@router.get("/trajectories/{date_id}/{sub_id}", response_model=MFJSONTotalTrajectory)
+@router.get("/trajectories/{date_id}/{sub_id}", response_model=MFJSONTrajectoryResponse)
 async def get_trajectories_by_date_id_and_sub_id(
         date_id: int = Path(description="The start date id of the trajectory. Expected format: YYYYMMDD",
                             example=20070110),
@@ -39,7 +39,7 @@ async def get_trajectories_by_date_id_and_sub_id(
     return JSONResponse(response_json(final_query, dw, params))
 
 
-@router.get("/trajectories/", response_model=list[GeoJSONTotalTrajectory] | list[MFJSONTotalTrajectory])
+@router.get("/trajectories/", response_model=list[GeoJSONTrajectoryResponse] | list[MFJSONTrajectoryResponse])
 async def get_trajectories(
         offset: int = Query(default=0, description="Specifies the offset of the first result to return."),
         limit: int = Query(default=10, description="Limits the number of results returned."),

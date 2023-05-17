@@ -69,13 +69,13 @@ class BaseTrajectory(BaseModel):
     navigational_status: str = "Under way using engine"
 
 
-class MFJSONTotalTrajectory(BaseTrajectory):
+class MFJSONTrajectoryResponse(BaseTrajectory):
     """Model for Moving Features JSON Trajectory."""
 
     trajectory: list[MFJSONTrajectory]
 
 
-class GeoJSONTotalTrajectory(BaseTrajectory):
+class GeoJSONTrajectoryResponse(BaseTrajectory):
     """Model for GeoJSON Trajectory."""
 
     trajectory: list[GeoJSONTrajectory]
