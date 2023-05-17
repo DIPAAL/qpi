@@ -19,8 +19,10 @@ SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
 @router.get("/trajectories/{date_id}/{sub_id}", response_model=MFJSONTotalTrajectory)
 async def get_trajectories_by_date_id_and_sub_id(
-        date_id: int = Path(description="The start date id of the trajectory.", example=20070110),
-        sub_id: str = Path(description="The sub id of the trajectory.", example=49396455),
+        date_id: int = Path(description="The start date id of the trajectory. Expected format: YYYYMMDD",
+                            example=20070110),
+        sub_id: str = Path(description="The sub id of the trajectory.",
+                           example=49396455),
         dw=Depends(get_dw)):
     """
     Get a single trajectory from a start date id and trajectory sub id.
