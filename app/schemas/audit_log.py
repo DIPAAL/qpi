@@ -56,7 +56,7 @@ class AuditLogResponse(BaseModel):
     audit_id: int = 1
     import_datetime: datetime = datetime(2023, 5, 12, 13, 51, 6, 656838)
     date_id: int = 20220101
-    statistics: dict = {
+    statistics: dict[str, int | float] = {
         "rows": {
             "file": 1000,
             "dim_ship": 2,
