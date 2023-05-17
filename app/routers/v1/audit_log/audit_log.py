@@ -10,8 +10,8 @@ router = APIRouter()
 
 @router.get("", response_model=list[AuditLogResponse])
 async def get_audit_logs(
-        limit: int = Query(default=100, description="Limits the number of results returned in the collection to N."),
-        offset: int = Query(default=0, description="Exclude the first N results of the collection."),
+        limit: int = Query(default=100, description="Limits the number of results returned."),
+        offset: int = Query(default=0, description="Specifies the offset of the first result to return."),
         dw=Depends(get_dw)):
     """Get all audit logs."""
     return dw.query(AuditLog).limit(limit).offset(offset).all()

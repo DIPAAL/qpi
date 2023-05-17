@@ -45,9 +45,8 @@ def cell_facts(
                                           description='The inclusive timestamp that defines'
                                           ' the start temporal bound of the result'),
         stopped: List[bool] = Query(default=[True, False], description='Looking at stopped and/or moving ships'),
-        limit: int = Query(default=1000, ge=0, description='Limits the number of results returned in the '
-                                                           'collection to N.'),
-        offset: int = Query(default=0, ge=0, description='Exclude the first N results of the collection.'),
+        limit: int = Query(default=1000, ge=0, description='Limits the number of results returned.'),
+        offset: int = Query(default=0, ge=0, description='Specifies the offset of the first result to return.'),
         dw: Session = Depends(get_dw)):
     """Get cell facts based on the given parameters."""
     with open(os.path.join(current_file_path, 'sql/fact_cell_extract.sql')) as file:

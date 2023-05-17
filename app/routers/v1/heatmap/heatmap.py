@@ -82,7 +82,7 @@ def single_heatmap(
         # Path parameters
         spatial_resolution: SpatialResolution = Path(description="The spatial resolution of the heatmap.",
                                                      example=SpatialResolution.five_kilometers),
-        heatmap_type: HeatmapType = Path(description="The type of the resulting heatmap.",
+        heatmap_type: HeatmapType = Path(description="The type of the heatmap.",
                                          example=HeatmapType.count),
         # Query parameters
         mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
@@ -102,7 +102,8 @@ def single_heatmap(
         srid: int = Query(default=3034, description='The spatial reference system for the heatmap. '
                                                     'Currently only EPSG:3034 is supported.'),
         enc_cell: EncCell = Query(default=None,
-                                  description='Limits the heatmaps spatial extent to the provided ENC cell.'),
+                                  description='Limits the heatmaps spatial extent to the provided ENC cell. '
+                                              'If provided, this parameter overrides any other spatial constraints'),
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
                                          description='The inclusive start time, '
                                                      'defines the start of the temporal bound.'),
@@ -241,10 +242,10 @@ def get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_
     return spatial_resolution, min_x, min_y, max_x, max_y, width, height
 
 
-@router.get("/mapalgebra/{heatmap_type}/{spatial_resolution}")
+@router.get("/mapalgebra/{heatmap_type}/{spatial_resolution}", response_class=PlainTextResponse)
 def mapalgebra_heatmap(
         # Path parameters
-        heatmap_type: HeatmapType = Path(description='The type of the resulting heatmap',
+        heatmap_type: HeatmapType = Path(description='The type of the heatmap.',
                                          example=HeatmapType.count),
         spatial_resolution: SpatialResolution = Path(description='The spatial resolution of the heatmap.',
                                                      example=SpatialResolution.five_kilometers),
@@ -279,7 +280,8 @@ def mapalgebra_heatmap(
                           description='The spatial reference system for the heatmap. '
                                       'Currently only EPSG:3034 is supported.'),
         enc_cell: EncCell = Query(default=None,
-                                  description='Limits the heatmaps spatial extent to the provided ENC cell.'),
+                                  description='Limits the heatmaps spatial extent to the provided ENC cell. '
+                                              'If provided, this parameter overrides any other spatial constraints.'),
         first_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
                                                      description='The mobile types to include in the first raster.'),
         first_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
@@ -369,9 +371,9 @@ def mapalgebra_heatmap(
                              )
 
 
-@router.get("/multi/{heatmap_type}/{spatial_resolution}/{temporal_resolution}")
+@router.get("/multi/{heatmap_type}/{spatial_resolution}/{temporal_resolution}", response_class=PlainTextResponse)
 def multi_heatmap(
-        heatmap_type: HeatmapType = Path(description='The type of the resulting heatmap',
+        heatmap_type: HeatmapType = Path(description='The type of the heatmap.',
                                          example=HeatmapType.count),
         spatial_resolution: SpatialResolution = Path(description='The spatial resolution of the heatmap.',
                                                      example=SpatialResolution.five_kilometers),
@@ -397,7 +399,8 @@ def multi_heatmap(
                           description='The spatial reference system for the heatmap. '
                                       'Currently only EPSG:3034 is supported.'),
         enc_cell: EncCell = Query(default=None,
-                                  description='Limits the heatmaps spatial extent to the provided ENC cell.'),
+                                  description='Limits the heatmaps spatial extent to the provided ENC cell. '
+                                              'If provided, this parameter overrides any other spatial constraints.'),
         mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
                                                description='Limits what mobile type the ships must belong to.'),
         ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],

@@ -25,8 +25,8 @@ SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 @router.get("/", response_model=List[Ship])
 async def ships(
         # Pagination
-        offset: int = Query(default=0, description="Exclude the first N results of the collection."),
-        limit: int = Query(default=10, description="Limits the number of results returned in the collection to N."),
+        offset: int = Query(default=0, description="Specifies the offset of the first result to return."),
+        limit: int = Query(default=10, description="Limits the number of results returned."),
         # Filters for ships
         mmsi_in: list[int] | None = Query(default=None,
                                           description="Filter for ships with specified MMSIs"),
