@@ -1,6 +1,6 @@
 """Model representing a trajectory in the DIPAAL data warehouse."""
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 # Add example values where appropriate
@@ -9,40 +9,40 @@ from datetime import datetime
 class MFJSON(BaseModel):
     """Model for Moving Features JSON."""
 
-    type: str = "MovingFloat"
-    values: list[int] = [54.2, 221.5]
-    datetimes: list[datetime] = datetime(2021, 1, 1, 1, 0, 0), datetime(2021, 1, 1, 8, 0, 0)
-    lower_inc: bool = True
-    upper_inc: bool = True
-    interpolation: str = "Step"
+    type: str = Field(description="The type of data")
+    values: list[int] = Field(description="The values for the type of data")
+    datetimes: list[datetime] = Field(description="The datetimes for the type of data")
+    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not")
+    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not")
+    interpolation: str = Field(description="The interpolation method used")
 
 
 class CRS(BaseModel):
     """Model for Coordinate Reference System."""
 
-    type: str = "name"
-    properties: dict[str, str] = {"name": "EPSG:4326"}
+    type: str = Field(description="The type of Coordinate Reference System")
+    properties: dict[str, str] = Field(description="The properties for that type of Coordinate Reference System")
 
 
 class MFJSONTrajectory(BaseModel):
     """Model for Moving Features JSON Trajectory."""
 
-    type: str = "MovingGeomPoint"
-    crs: CRS
-    coordinates: list[list[float, float]] = [[14.605, 12.504], [24.304, 13.236]]
-    datetimes: list[datetime] = [datetime(2021, 1, 1, 1, 0, 0), datetime(2021, 1, 1, 8, 0, 0)]
-    lower_inc: bool = True
-    upper_inc: bool = True
-    interpolation: str = "Linear"
+    type: str = Field(description="The type of data")
+    crs: CRS = Field(description="The Coordinate Reference System of the trajectory")
+    coordinates: list[list[float, float]] = Field(description="The coordinates of the trajectory")
+    datetimes: list[datetime] = Field(description="The datetimes of the trajectory")
+    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not")
+    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not")
+    interpolation: str = Field(description="The interpolation method used")
 
 
 class GeoJSONInnerTrajectory(BaseModel):
     """Model for the inner trajectory of a GeoJSON Trajectory."""
 
-    crs: CRS
-    type: str = "LineString"
-    datetimes: list[datetime]
-    coordinates: list[(float, float)] = [[14.605, 12.504], [24.304, 13.236]]
+    crs: CRS = Field(description="The Coordinate Reference System of the trajectory")
+    type: str = Field(description="The type of trajectory")
+    datetimes: list[datetime] = Field(description="The datetimes of the trajectory")
+    coordinates: list[(float, float)] = Field(description="The coordinates of the trajectory")
 
 
 class GeoJSONTrajectory(BaseModel):
@@ -54,28 +54,28 @@ class GeoJSONTrajectory(BaseModel):
 class BaseTrajectory(BaseModel):
     """Base Trajectory Model."""
 
-    trajectory_sub_id: int
-    start_timestamp: datetime = datetime(2021, 1, 1, 1, 0, 0)
-    end_timestamp: datetime = datetime(2021, 1, 1, 8, 0, 0)
-    eta_timestamp: datetime = datetime(2021, 1, 2, 2, 0, 0)
+    trajectory_sub_id: int = Field(description="The sub id of the trajectory")
+    start_timestamp: datetime = Field(description="The start timestamp of the trajectory")
+    end_timestamp: datetime = Field(description="The end timestamp of the trajectory")
+    eta_timestamp: datetime = Field(description="The estimated time of arrival of the trajectory")
     trajectory: None
-    rot: list[MFJSON] | None
-    heading: list[MFJSON] | None
-    draught: list[MFJSON] | None
-    destination: str = "TERNEUZEN VIA NOK"
-    duration: int = 7
-    length: int = 44
-    stopped: bool = False
-    navigational_status: str = "Under way using engine"
+    rot: list[MFJSON] | None = Field(description="The rate of turn of the trajectory as Moving Features JSON")
+    heading: list[MFJSON] | None = Field(description="The heading of the trajectory as Moving Features JSON")
+    draught: list[MFJSON] | None = Field(description="The draught of the trajectory as Moving Features JSON")
+    destination: str | None = Field(description="The destination of the trajectory")
+    duration: int = Field(description="The duration of the trajectory")
+    length: int = Field(description="The length of the trajectory")
+    stopped: bool = Field(description="Whether the trajectory represents a stopped ship or not")
+    navigational_status: str = Field(description="The navigational status of the trajectory")
 
 
 class MFJSONTrajectoryResponse(BaseTrajectory):
     """Model for Moving Features JSON Trajectory."""
 
-    trajectory: list[MFJSONTrajectory]
+    trajectory: list[MFJSONTrajectory] = Field(description="The trajectory as Moving Features JSON")
 
 
 class GeoJSONTrajectoryResponse(BaseTrajectory):
     """Model for GeoJSON Trajectory."""
 
-    trajectory: list[GeoJSONTrajectory]
+    trajectory: list[GeoJSONTrajectory] = Field(description="The trajectory as GeoJSON")
