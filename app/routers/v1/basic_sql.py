@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_dw
 from app.schemas.relations import DWRELATION
-from app.schemas.basic_output import CountRows, ColumnNames
+from app.schemas.count_rows import CountRows
+from app.schemas.column_names import ColumnNames
 
 router = APIRouter()
 
