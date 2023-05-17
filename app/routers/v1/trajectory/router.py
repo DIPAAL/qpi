@@ -19,7 +19,7 @@ SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
 @router.get("/trajectories/{date_id}/{sub_id}", response_model=MFJSONTrajectoryResponse)
 async def get_trajectories_by_date_id_and_sub_id(
-        date_id: int = Path(description="The start date id of the trajectory. Expected format: YYYYMMDD",
+        date_id: int = Path(description="The start date id of the trajectory. Expected format: YYYYMMDD.",
                             example=20070110),
         sub_id: str = Path(description="The sub id of the trajectory.",
                            example=49396455),
@@ -45,16 +45,16 @@ async def get_trajectories(
         limit: int = Query(default=10, description="Limits the number of results returned."),
         x_min: float | None = Query(default=None,
                                     description='Defines the "left side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         y_min: float | None = Query(default=None,
                                     description='Defines the "bottom side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         x_max: float | None = Query(default=None,
                                     description='Defines the "right side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         y_max: float | None = Query(default=None,
                                     description='Defines the "top side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         destination: list[str] | None = Query(default=None,
                                               description="Limits the destinations the ships must be going to."),
         mmsi: list[int] | None = Query(default=None,
