@@ -78,12 +78,14 @@ def convert_db_row_to_cell_fact(db_row: pd.Series) -> FactCell:
     Keyword Arguments:
         db_row: Pandas series containing a single cell fact
     """
+    timestamp_format: str = '%Y-%m-%dT%H:%M:%SZ'
+
     return FactCell.parse_obj({
         'x': db_row['x'],
         'y': db_row['y'],
         'trajectory_sub_id': db_row['trajectory_sub_id'],
-        'entry_timestamp': db_row['entry_timestamp'].strftime(TIMESTAMP_FORMAT),
-        'exit_timestamp': db_row['exit_timestamp'].strftime(TIMESTAMP_FORMAT),
+        'entry_timestamp': db_row['entry_timestamp'].strftime(timestamp_format),
+        'exit_timestamp': db_row['exit_timestamp'].strftime(timestamp_format),
         'navigational_status': db_row['navigational_status'],
         'direction': {
             'begin': db_row['begin'],
@@ -103,6 +105,3 @@ def convert_db_row_to_cell_fact(db_row: pd.Series) -> FactCell:
             'flag_state': db_row['flag_state']
         }
     })
-
-
-TIMESTAMP_FORMAT: str = '%Y-%m-%dT%H:%M:%SZ'
