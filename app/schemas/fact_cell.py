@@ -20,7 +20,8 @@ class FactCell(BaseModel):
     sog: float = Field(description='The speed over ground of the ship while within the cell.')
     delta_cog: float = Field(description='Describes how much the course over ground'
                              ' of the ship changed while within the cell.')
-    delta_heading: float = Field(description='Describes how much the heading of the ship changed while within the cell.')
+    delta_heading: float = Field(description='Describes how much the heading of the ship changed while within '
+                                             'the cell.')
     draught: float | None = Field(description='The maximum draught set by the ship while within the cell.')
     stopped: bool = Field(description='Indicated whether the ship has been inferred to be stopped within the cell.')
     ship: CellShip = Field(description='Information about the cell that created the cell fact.')
