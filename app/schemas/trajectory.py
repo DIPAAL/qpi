@@ -9,31 +9,31 @@ from datetime import datetime
 class MFJSON(BaseModel):
     """Model for Moving Features JSON."""
 
-    type: str = Field(description="The type of data")
-    values: list[int] = Field(description="The values for the type of data")
-    datetimes: list[datetime] = Field(description="The datetimes for the type of data")
-    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not")
-    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not")
-    interpolation: str = Field(description="The interpolation method used")
+    type: str = Field(description="The type of data.")
+    values: list[int] = Field(description="The values for the type of data.")
+    datetimes: list[datetime] = Field(description="The datetimes for the type of data.")
+    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not.")
+    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not.")
+    interpolation: str = Field(description="The interpolation method used.")
 
 
 class CRS(BaseModel):
     """Model for Coordinate Reference System."""
 
-    type: str = Field(description="The type of Coordinate Reference System")
-    properties: dict[str, str] = Field(description="The properties for that type of Coordinate Reference System")
+    type: str = Field(description="The type of Coordinate Reference System.")
+    properties: dict[str, str] = Field(description="The properties for that type of Coordinate Reference System.")
 
 
 class MFJSONTrajectory(BaseModel):
     """Model for Moving Features JSON Trajectory."""
 
-    type: str = Field(description="The type of data")
-    crs: CRS = Field(description="The Coordinate Reference System of the trajectory")
-    coordinates: list[list[float, float]] = Field(description="The coordinates of the trajectory")
-    datetimes: list[datetime] = Field(description="The datetimes of the trajectory")
-    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not")
-    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not")
-    interpolation: str = Field(description="The interpolation method used")
+    type: str = Field(description="The type of data.")
+    crs: CRS = Field(description="The Coordinate Reference System of the trajectory.")
+    coordinates: list[list[float, float]] = Field(description="The coordinates of the trajectory.")
+    datetimes: list[datetime] = Field(description="The datetimes of the trajectory.")
+    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not.")
+    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not.")
+    interpolation: str = Field(description="The interpolation method used.")
 
 
 class GeoJSONInnerTrajectory(BaseModel):
