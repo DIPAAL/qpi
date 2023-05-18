@@ -6,8 +6,8 @@ from datetime import datetime
 class TemporalDomain(BaseModel):
     """Model for portraying the temporal domain of a heatmap."""
 
-    start: datetime = Field(description='The start of the temporal domain')
-    end: datetime = Field(description='The end of the temporal domain')
+    start: datetime = Field(description='The start of the temporal domain.')
+    end: datetime = Field(description='The end of the temporal domain.')
 
 
 class TemporalResolution(BaseModel):
