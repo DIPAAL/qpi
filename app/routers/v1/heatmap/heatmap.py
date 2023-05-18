@@ -103,7 +103,7 @@ def single_heatmap(
                                                     'Currently only EPSG:3034 is supported.'),
         enc_cell: EncCell = Query(default=None,
                                   description='Limits the heatmaps spatial extent to the provided ENC cell. '
-                                              'If provided, this parameter overrides any other spatial constraints'),
+                                              'If provided, this parameter overrides any other spatial constraints.'),
         start: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
                                          description='The inclusive start time, '
                                                      'defines the start of the temporal bound.'),
