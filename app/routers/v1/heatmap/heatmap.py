@@ -4,7 +4,7 @@ import io
 import datetime
 import os
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Path
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import text
 import pandas as pd
@@ -22,7 +22,9 @@ from app.schemas.spatial_resolution import SpatialResolution
 from app.schemas.temporal_resolution import TemporalResolution
 from app.schemas.enc_enum import EncCell
 from app.schemas.multi_output_format import MultiOutputFormat
+from app.schemas.heatmapmeta import HeatmapMetadata
 from helper_functions import measure_time
+
 
 router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -33,9 +35,9 @@ temporal_resolution_names = {
 }
 
 
-@router.get("")
+@router.get("", response_model=dict[str, HeatmapMetadata])
 def metadata(db: Session = Depends(get_dw)):
-    """Return the available heatmaps."""
+    """Return all heatmaps that are available in the DW."""
     with open(os.path.join(current_file_path, "sql/available_heatmaps.sql"), "r") as f:
         query = f.read()
 
@@ -77,29 +79,47 @@ def metadata(db: Session = Depends(get_dw)):
 
 @router.get("/single/{heatmap_type}/{spatial_resolution}", response_class=PlainTextResponse)
 def single_heatmap(
-        spatial_resolution: SpatialResolution,
-        mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
-        ship_types: list[ShipType] = Query(default=[ship_type for ship_type in ShipType]),
-        output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff),
-        min_x: int = Query(default=3600000),
-        min_y: int = Query(default=3030000),
-        max_x: int = Query(default=4395000),
-        max_y: int = Query(default=3485000),
-        srid: int = Query(default=3034),
-        enc_cell: EncCell = Query(default=None),
-        start: datetime.datetime = Query(default="2022-01-01T00:00:00Z"),
-        end: datetime.datetime = Query(default="2022-02-01T00:00:00Z"),
-        heatmap_type: HeatmapType = HeatmapType.count,
+        # Path parameters
+        spatial_resolution: SpatialResolution = Path(description="The spatial resolution of the heatmap.",
+                                                     example=SpatialResolution.five_kilometers),
+        heatmap_type: HeatmapType = Path(description="The type of the heatmap.",
+                                         example=HeatmapType.count),
+        # Query parameters
+        mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
+                                               description="Limits what mobile type the ships must belong to."),
+        ship_types: list[ShipType] = Query(default=[ship_type for ship_type in ShipType],
+                                           description="Limits what ship type the ships must belong to."),
+        output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff,
+                                                  description="The output format of the heatmap."),
+        x_min: int = Query(default=3600000, description='Defines the "left side" of the bounding rectangle, '
+                                                        'coordinates must match the provided "srid" parameter.'),
+        y_min: int = Query(default=3030000, description='Defines the "bottom side" of the bounding rectangle, '
+                                                        'coordinates must match the provided "srid" parameter.'),
+        x_max: int = Query(default=4395000, description='Defines the "right side" of the bounding rectangle, '
+                                                        'coordinates must match the provided "srid" parameter.'),
+        y_max: int = Query(default=3485000, description='Defines the "top side" of the bounding rectangle, '
+                                                        'coordinates must match the provided "srid" parameter.'),
+        srid: int = Query(default=3034, description='The spatial reference system for the heatmap. '
+                                                    'Currently only EPSG:3034 is supported.'),
+        enc_cell: EncCell = Query(default=None,
+                                  description='Limits the heatmaps spatial extent to the provided ENC cell. '
+                                              'If provided, this parameter overrides any other spatial constraints.'),
+        start: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
+                                         description='The inclusive start time, '
+                                                     'defines the start of the temporal bound.'),
+        end: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
+                                       description='The inclusive end time, '
+                                                   'defines the end of the temporal bound.'),
         dw=Depends(get_dw)):
-    """Return a single heatmap."""
+    """Return a single heatmap, based on the parameters provided."""
     if srid != 3034:
         raise HTTPException(501, "Only SRID 3034 is supported.")
 
     with open(os.path.join(current_file_path, "sql/single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
-        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
+    spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
     start_date_id = int(start.strftime("%Y%m%d"))
     end_date_id = int(end.strftime("%Y%m%d"))
@@ -107,14 +127,14 @@ def single_heatmap(
     params = {
         'width': width,
         'height': height,
-        'min_x': min_x,
-        'min_y': min_y,
-        'max_x': max_x,
-        'max_y': max_y,
-        'min_cell_x': int(min_x / 5000),
-        'min_cell_y': int(min_y / 5000),
-        'max_cell_x': int(max_x / 5000),
-        'max_cell_y': int(max_y / 5000),
+        'min_x': x_min,
+        'min_y': y_min,
+        'max_x': x_max,
+        'max_y': y_max,
+        'min_cell_x': int(x_min / 5000),
+        'min_cell_y': int(y_min / 5000),
+        'max_cell_x': int(x_max / 5000),
+        'max_cell_y': int(y_max / 5000),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'mobile_types': mobile_types,
@@ -222,39 +242,77 @@ def get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_
     return spatial_resolution, min_x, min_y, max_x, max_y, width, height
 
 
-@router.get("/mapalgebra/{heatmap_type}/{spatial_resolution}")
+@router.get("/mapalgebra/{heatmap_type}/{spatial_resolution}", response_class=PlainTextResponse)
 def mapalgebra_heatmap(
-        heatmap_type: HeatmapType = HeatmapType.count,
-        spatial_resolution: SpatialResolution = SpatialResolution.five_kilometers,
-        output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff),
-        map_algebra_expr: str = Query(default="[rast1.val]-[rast2.val]"),
-        map_algebra_no_data_1_expr: str = Query(default="[rast2.val]"),
-        map_algebra_no_data_2_expr: str = Query(default="-[rast1.val]"),
-        min_x: int = Query(default=3600000),
-        min_y: int = Query(default=3030000),
-        max_x: int = Query(default=4395000),
-        max_y: int = Query(default=3485000),
-        srid: int = Query(default=3034),
-        enc_cell: EncCell = Query(default=None),
-        first_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
-        first_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
-        first_start: datetime.datetime = Query(default="2021-01-01T00:00:00Z"),
-        first_end: datetime.datetime = Query(default="2021-02-01T00:00:00Z"),
-        second_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
-        second_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
-        second_start: datetime.datetime = Query(default="2021-07-01T00:00:00Z"),
-        second_end: datetime.datetime = Query(default="2021-08-01T00:00:00Z"),
+        # Path parameters
+        heatmap_type: HeatmapType = Path(description='The type of the heatmap.',
+                                         example=HeatmapType.count),
+        spatial_resolution: SpatialResolution = Path(description='The spatial resolution of the heatmap.',
+                                                     example=SpatialResolution.five_kilometers),
+        # Query parameters
+        output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff,
+                                                  description='Output format of the heatmap.'),
+        map_algebra_expr: str = Query(default="[rast1.val]-[rast2.val]",
+                                      description='A PostgreSQL algebraic expression involving two rasters and '
+                                                  'functions/operators that defines the pixel value when pixels '
+                                                  'intersect.'),
+        map_algebra_no_data_1_expr: str = Query(default="[rast2.val]",
+                                                description='A PostgreSQL algebraic expression only involving the '
+                                                            'second raster, that defines what to return when the first '
+                                                            'raster has no data.'),
+        map_algebra_no_data_2_expr: str = Query(default="-[rast1.val]",
+                                                description='A PostgreSQL algebraic expression only involving the '
+                                                            'first raster, that defines what to return when the second '
+                                                            'raster has no data.'),
+        x_min: int = Query(default=3600000,
+                           description='Defines the "left side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        y_min: int = Query(default=3030000,
+                           description='Defines the "bottom side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        x_max: int = Query(default=4395000,
+                           description='Defines the "right side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        y_max: int = Query(default=3485000,
+                           description='Defines the "top side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        srid: int = Query(default=3034,
+                          description='The spatial reference system for the heatmap. '
+                                      'Currently only EPSG:3034 is supported.'),
+        enc_cell: EncCell = Query(default=None,
+                                  description='Limits the heatmaps spatial extent to the provided ENC cell. '
+                                              'If provided, this parameter overrides any other spatial constraints.'),
+        first_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
+                                                     description='The mobile types to include in the first raster.'),
+        first_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
+                                                 description='The ship types to include in the first raster.'),
+        first_start: datetime.datetime = Query(default="2021-01-01T00:00:00Z",
+                                               description='The inclusive start of the temporal bound for the '
+                                                           'first raster.'),
+        first_end: datetime.datetime = Query(default="2021-02-01T00:00:00Z",
+                                             description='The inclusive end of the temporal bound for the '
+                                                         'first raster.'),
+        second_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
+                                                      description='The mobile types to include in the second raster.'),
+        second_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
+                                                  description='The ship types to include in the second raster.'),
+        second_start: datetime.datetime = Query(default="2021-07-01T00:00:00Z",
+                                                description='The inclusive start of the temporal bound for the '
+                                                            'second raster.'),
+        second_end: datetime.datetime = Query(default="2021-08-01T00:00:00Z",
+                                              description='The inclusive end of the temporal bound for the '
+                                                          'second raster.'),
         dw=Depends(get_dw)
 ):
-    """Return a single mapalgebra heatmap."""
+    """Return a single mapalgebra heatmap, based on the parameters provided."""
     if srid != 3034:
         raise HTTPException(501, "Only SRID 3034 is supported.")
 
     with open(os.path.join(current_file_path, "sql/mapalgebra_single_heatmap.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
-        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
+    spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
     first_start_date_id = int(first_start.strftime("%Y%m%d"))
     first_end_date_id = int(first_end.strftime("%Y%m%d"))
@@ -264,14 +322,14 @@ def mapalgebra_heatmap(
     params = {
         'width': width,
         'height': height,
-        'min_x': min_x,
-        'min_y': min_y,
-        'max_x': max_x,
-        'max_y': max_y,
-        'min_cell_x': int(min_x / 5000),
-        'min_cell_y': int(min_y / 5000),
-        'max_cell_x': int(max_x / 5000),
-        'max_cell_y': int(max_y / 5000),
+        'min_x': x_min,
+        'min_y': y_min,
+        'max_x': x_max,
+        'max_y': y_max,
+        'min_cell_x': int(x_min / 5000),
+        'min_cell_y': int(y_min / 5000),
+        'max_cell_x': int(x_max / 5000),
+        'max_cell_y': int(y_max / 5000),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'map_algebra_expr': map_algebra_expr,
@@ -313,34 +371,57 @@ def mapalgebra_heatmap(
                              )
 
 
-@router.get("/multi/{heatmap_type}/{spatial_resolution}/{temporal_resolution}")
+@router.get("/multi/{heatmap_type}/{spatial_resolution}/{temporal_resolution}", response_class=PlainTextResponse)
 def multi_heatmap(
-        heatmap_type: HeatmapType = HeatmapType.count,
-        spatial_resolution: SpatialResolution = SpatialResolution.five_kilometers,
-        temporal_resolution: TemporalResolution = TemporalResolution.daily,
-        output_format: MultiOutputFormat = Query(default=MultiOutputFormat.mp4),
-        fps: int = Query(default=10),
-        min_x: int = Query(default=3600000),
-        min_y: int = Query(default=3030000),
-        max_x: int = Query(default=4395000),
-        max_y: int = Query(default=3485000),
-        srid: int = Query(default=3034),
-        enc_cell: EncCell = Query(default=None),
-        mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b]),
-        ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger]),
-        start: datetime.datetime = Query(default="2021-01-01T00:00:00Z"),
-        end: datetime.datetime = Query(default="2021-02-01T00:00:00Z"),
+        heatmap_type: HeatmapType = Path(description='The type of the heatmap.',
+                                         example=HeatmapType.count),
+        spatial_resolution: SpatialResolution = Path(description='The spatial resolution of the heatmap.',
+                                                     example=SpatialResolution.five_kilometers),
+        temporal_resolution: TemporalResolution = Path(description='The temporal resolution of the heatmap.',
+                                                       example=TemporalResolution.daily),
+        output_format: MultiOutputFormat = Query(default=MultiOutputFormat.mp4,
+                                                 description='The output format of result.'),
+        fps: int = Query(default=10,
+                         description='The frames per second of the result. Only applicable for mp4 output format.'),
+        x_min: int = Query(default=3600000,
+                           description='Defines the "left side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        y_min: int = Query(default=3030000,
+                           description='Defines the "bottom side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        x_max: int = Query(default=4395000,
+                           description='Defines the "right side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        y_max: int = Query(default=3485000,
+                           description='Defines the "top side" of the bounding rectangle, '
+                                       'coordinates must match the provided "srid" parameter.'),
+        srid: int = Query(default=3034,
+                          description='The spatial reference system for the heatmap. '
+                                      'Currently only EPSG:3034 is supported.'),
+        enc_cell: EncCell = Query(default=None,
+                                  description='Limits the heatmaps spatial extent to the provided ENC cell. '
+                                              'If provided, this parameter overrides any other spatial constraints.'),
+        mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
+                                               description='Limits what mobile type the ships must belong to.'),
+        ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
+                                           description='Limits what ship type the ships must belong to.'),
+        start: datetime.datetime = Query(default="2021-01-01T00:00:00Z",
+                                         description='The inclusive start time, '
+                                                     'defines the start of the temporal bound.'),
+        end: datetime.datetime = Query(default="2021-02-01T00:00:00Z",
+                                       description='The exclusive end time, '
+                                                   'defines the end of the temporal bound.'),
         dw=Depends(get_dw)
 ):
-    """Return a multi heatmap."""
+    """Return a multi heatmap, based on the parameters provided."""
     if srid != 3034:
         raise HTTPException(501, "Only SRID 3034 is supported.")
 
     with open(os.path.join(current_file_path, f"sql/multi_heatmaps/{temporal_resolution.value}.sql"), "r") as f:
         query = f.read()
 
-    spatial_resolution, min_x, min_y, max_x, max_y, width, height = \
-        get_spatial_resolution_and_bounds(dw, spatial_resolution, min_x, min_y, max_x, max_y, enc_cell)
+    spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
+        get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
     start_date_id = int(start.strftime("%Y%m%d"))
     end_date_id = int(end.strftime("%Y%m%d"))
@@ -348,14 +429,14 @@ def multi_heatmap(
     params = {
         'width': width,
         'height': height,
-        'min_x': min_x,
-        'min_y': min_y,
-        'max_x': max_x,
-        'max_y': max_y,
-        'min_cell_x': int(min_x / 5000),
-        'min_cell_y': int(min_y / 5000),
-        'max_cell_x': int(max_x / 5000),
-        'max_cell_y': int(max_y / 5000),
+        'min_x': x_min,
+        'min_y': y_min,
+        'max_x': x_max,
+        'max_y': y_max,
+        'min_cell_x': int(x_min / 5000),
+        'min_cell_y': int(y_min / 5000),
+        'max_cell_x': int(x_max / 5000),
+        'max_cell_y': int(y_max / 5000),
         'spatial_resolution': int(spatial_resolution),
         'heatmap_type_slug': heatmap_type,
         'mobile_types': mobile_types,

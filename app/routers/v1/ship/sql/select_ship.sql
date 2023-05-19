@@ -12,4 +12,6 @@ SELECT DISTINCT ds.ship_id,
        ds.a,
        ds.b,
        ds.c,
-       ds.d
+       ds.d,
+       ds.length,
+       ds.width

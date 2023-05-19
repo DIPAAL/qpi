@@ -8,7 +8,7 @@ WITH reference (rast, geom) AS (
     ST_MakeEnvelope(:min_x, :min_y, :max_x, :max_y, 3034) AS geom
 )
 SELECT
-    ST_AsGDALRaster(ST_MapAlgebra(r1.rast, r2.rast, expression := :map_algebra_expr, pixeltype := '32BSI', nodata1expr := '[rast2.val]', nodata2expr := '0-[rast1.val]', nodatanodataval := '0'),'GTiff')
+    ST_AsGDALRaster(ST_MapAlgebra(r1.rast, r2.rast, expression := :map_algebra_expr, pixeltype := '32BSI', nodata1expr := :map_algebra_no_data_1_expr, nodata2expr := :map_algebra_no_data_2_expr, nodatanodataval := '0'),'GTiff')
 FROM (
     SELECT ST_MapAlgebra(q2.rast, reference.rast, '[rast1.val]+[rast2.val]', extenttype := 'SECOND') AS rast
     FROM reference, (

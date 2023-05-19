@@ -10,19 +10,25 @@ from helper_functions import response_json, get_values_from_enum_list
 from typing import Any
 import os
 from app.schemas.time_series_representation import TimeSeriesRepresentation
-
+from app.schemas.trajectory import GeoJSONTrajectoryResponse, MFJSONTrajectoryResponse
 
 router = APIRouter()
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql")
 
 
-@router.get("/trajectories/{date_id}/{sub_id}")
+@router.get("/trajectories/{date_id}/{sub_id}", response_model=MFJSONTrajectoryResponse)
 async def get_trajectories_by_date_id_and_sub_id(
-        date_id: int = Path(description="The date id of the trajectory.", example=20070110),
-        sub_id: str = Path(description="The sub id of the trajectory.", example=49396455),
+        date_id: int = Path(description="The start date id of the trajectory, in format: YYYYMMDD.",
+                            example=20070110),
+        sub_id: str = Path(description="The sub id of the trajectory.",
+                           example=49396455),
         dw=Depends(get_dw)):
-    """Get a single trajectory from a start date id and trajectory sub id."""
+    """
+    Get a single trajectory from a start date id and trajectory sub id.
+
+    The trajectory is returned as a MFJSON object.
+    """
     params = {"date_id": date_id, "sub_id": sub_id}
     qb = QueryBuilder(SQL_PATH)
     qb.add_sql("select_date_id_and_sub_id.sql")
@@ -33,51 +39,54 @@ async def get_trajectories_by_date_id_and_sub_id(
     return JSONResponse(response_json(final_query, dw, params))
 
 
-@router.get("/trajectories/")
+@router.get("/trajectories/", response_model=list[GeoJSONTrajectoryResponse] | list[MFJSONTrajectoryResponse])
 async def get_trajectories(
-        offset: int = Query(default=0, description="Skip the first X ships returned by the request"),
-        limit: int = Query(default=10, description="Limit the number of ships returned by the request to X"),
+        offset: int = Query(default=0, description="Specifies the offset of the first result to return."),
+        limit: int = Query(default=10, description="Limits the number of results returned."),
         x_min: float | None = Query(default=None,
                                     description='Defines the "left side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         y_min: float | None = Query(default=None,
                                     description='Defines the "bottom side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         x_max: float | None = Query(default=None,
                                     description='Defines the "right side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         y_max: float | None = Query(default=None,
                                     description='Defines the "top side" of the bounding rectangle,'
-                                                ' coordinates must match the provided "srid"'),
+                                                ' coordinates must match the provided "srid".'),
         destination: list[str] | None = Query(default=None,
-                                              description="The destination of the ship generating the trajectory."),
+                                              description="Limits the destinations the ships must be going to."),
         mmsi: list[int] | None = Query(default=None,
-                                       description="The MMSI for the ship generating the trajectory."),
+                                       description="Limits what MMSI the ships must sails under."),
         imo: list[int] | None = Query(default=None,
-                                      description="The IMO for the ship generating the trajectory."),
+                                      description="Limits what IMO  the ships must sails under."),
         name: list[str] | None = Query(default=None,
-                                       description="The name for the ship generating the trajectory."),
+                                       description="Limits what name the ships must sails under."),
         country: list[str] | None = Query(default=None,
-                                          description="The country for the ship generating the trajectory."),
+                                          description="Limits what country the ships must hail from."),
         callsign: list[str] | None = Query(default=None,
-                                           description="The callsign for the ship generating the trajectory."),
+                                           description="Limits what callsign the ships must sails under."),
         mobile_type: list[MobileType] | None = Query(default=None,
-                                                     description="The mobile type for the ship"
-                                                                 " sailing on the trajectory."),
+                                                     description="Limits what mobile type the ships must belong to."
+                                                                 "\nIf not provided, all mobile types are included."),
         srid: int = Query(default=4326,
                           description="The spatial reference system for the trajectory."),
         from_date: datetime | None = Query(default=None,
                                            example="2021-01-01T00:00:00Z",
-                                           description="The start date for the trajectory."),
+                                           description="The inclusive start date, defines the start of the temporal "
+                                                       "bound. If not provided, the earliest date is used."),
         to_date: datetime | None = Query(default=None,
                                          example="2021-01-01T00:00:00Z",
-                                         description="The end date for the trajectory."),
+                                         description="The inclusive end date, defines the end of "
+                                                     "the temporal bound. If not provided, the latest date is used."),
         stopped: bool | None = Query(default=None,
-                                     description="If the trajectory must represents a stopped ship."
-                                                 "\nIf not provided, both stopped and non-stopped ships are returned."),
+                                     description="If the result must represents stopped ships."
+                                                 "\nIf not provided, both stopped and "
+                                                 "non-stopped ships are represented."),
         time_series_representation_type: TimeSeriesRepresentation =
         Query(default=TimeSeriesRepresentation.MFJSON,
-              description="The time series representation of the trajectory data in the response."),
+              description="The time series representation of the trajectory data in the result."),
         dw: Session = Depends(get_dw)
 ):
     """Get trajectories based on the provided parameters."""
@@ -93,9 +102,9 @@ async def get_trajectories(
     qb = QueryBuilder(SQL_PATH)
 
     # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
-    if time_series_representation_type.MFJSON:
+    if time_series_representation_type == TimeSeriesRepresentation.MFJSON:
         qb.add_sql("select_MFJSON.sql")
-    elif time_series_representation_type.GEOJSON:
+    elif time_series_representation_type == TimeSeriesRepresentation.GEOJSON:
         qb.add_sql("select_GeoJSON.sql")
 
     # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
