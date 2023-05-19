@@ -21,3 +21,5 @@ class Ship(BaseModel):
     b: int = Field(description='The distance from the stern to the antenna.')
     c: int = Field(description='The distance from the port side to the antenna.')
     d: int = Field(description='The distance from the starboard side to the antenna.')
+    length: int = Field(description='The length of the ship.')
+    width: int = Field(description='The width of the ship.')
