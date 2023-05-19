@@ -96,11 +96,21 @@ def convert_db_row_to_cell_fact(db_row: pd.Series) -> FactCell:
         'draught': db_row['draught'],
         'stopped': str(db_row['stopped']).lower(),
         'ship': {
+            'ship_id': db_row['ship_id'],
             'mmsi': db_row['mmsi'],
             'imo': db_row['imo'],
             'name': db_row['name'],
-            'type': db_row['ship_type'],
-            'mobile': db_row['mobile_type'],
-            'flag_state': db_row['flag_state']
+            'callsign': db_row['callsign'],
+            'ship_type': db_row['ship_type'],
+            'mobile_type': db_row['mobile_type'],
+            'flag_region': db_row['flag_region'],
+            'flag_state': db_row['flag_state'],
+            'location_system_type': db_row['location_system_type'],
+            'a': db_row['a'],
+            'b': db_row['b'],
+            'c': db_row['c'],
+            'd': db_row['d'],
+            'length': db_row['length'],
+            'width': db_row['width'],
         }
     })

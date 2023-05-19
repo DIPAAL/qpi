@@ -12,12 +12,9 @@ SELECT
     fc.delta_heading,
     fc.draught,
     fc.infer_stopped AS stopped,
-    ds.mmsi,
-    ds.imo,
-    ds.name,
+    ds.*,
     dst.ship_type,
-    dst.mobile_type,
-    ds.flag_state
+    dst.mobile_type
 FROM fact_cell_{CELL_SIZE}m fc
 INNER JOIN dim_cell_{CELL_SIZE}m dc ON fc.cell_x = dc.x AND fc.cell_y = dc.y AND fc.partition_id = dc.partition_id
 INNER JOIN dim_ship ds ON fc.ship_id = ds.ship_id
