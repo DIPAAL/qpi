@@ -7,7 +7,7 @@ from app.dependencies import get_dw
 from app.schemas.fact_cell import FactCell
 from app.schemas.spatial_resolution import SpatialResolution
 from datetime import datetime
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Path
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import text
@@ -18,7 +18,7 @@ router = APIRouter()
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 
 
-@router.get('', response_model=List[FactCell])
+@router.get('/{cell_size}', response_model=List[FactCell])
 def cell_facts(
         x_min: int = Query(example='3600000',
                            description='Defines the "left side" of the bounding rectangle,'
@@ -32,8 +32,7 @@ def cell_facts(
         y_max: int = Query(example='3485000',
                            description='Defines the "top side" of the bounding rectangle,'
                            ' coordinates must match the provided "srid".'),
-        cell_size: SpatialResolution = Query(default=SpatialResolution.five_kilometers,
-                                             description='Defines the spatial resolution of the resulting cell facts.'),
+        cell_size: SpatialResolution = Path(description='Defines the spatial resolution of the resulting cell facts.'),
         srid: int = Query(default=3034,
                           description='The srid projection used for the defined bounding rectangle.'),
         end_timestamp: datetime = Query(default=datetime.max,
