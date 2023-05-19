@@ -3,7 +3,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
 from app.schemas.direction import Direction
-from app.schemas.cellship import CellShip
+from app.schemas.ship import Ship
 
 
 class FactCell(BaseModel):
