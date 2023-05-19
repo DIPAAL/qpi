@@ -31,8 +31,8 @@ class MFJSONTrajectory(BaseModel):
     crs: CRS = Field(description="The Coordinate Reference System of the trajectory.")
     coordinates: list[list[float, float]] = Field(description="The coordinates of the trajectory.")
     datetimes: list[datetime] = Field(description="The datetimes of the trajectory.")
-    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not for datetimes and values.")
-    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not for datetimes and values.")
+    lower_inc: bool = Field(description="Whether the lower bound is inclusive or not for datetimes and coordinates.")
+    upper_inc: bool = Field(description="Whether the upper bound is inclusive or not for datetimes and coordinates.")
     interpolation: str = Field(description="The interpolation method used.")
 
 
