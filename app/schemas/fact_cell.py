@@ -24,4 +24,4 @@ class FactCell(BaseModel):
                                              'the cell.')
     draught: float | None = Field(description='The maximum draught set by the ship while within the cell.')
     stopped: bool = Field(description='Indicated whether the ship has been inferred to be stopped within the cell.')
-    ship: Ship = Field(description='Information about the ship that created the cell fact.')
+    ship: Ship = Field(description='Information about the cell that created the cell fact.')
