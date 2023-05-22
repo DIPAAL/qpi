@@ -32,7 +32,8 @@ def cell_facts(
         y_max: int = Query(example='3485000',
                            description='Defines the "top side" of the bounding rectangle,'
                            ' coordinates must match the provided "srid".'),
-        cell_size: SpatialResolution = Path(description='Defines the spatial resolution of the resulting cell facts.'),
+        cell_size: SpatialResolution = Path(example=SpatialResolution.five_kilometers,
+                                            description='Defines the spatial resolution of the resulting cell facts.'),
         srid: int = Query(default=3034,
                           description='The srid projection used for the defined bounding rectangle.'),
         end_timestamp: datetime = Query(default=datetime.max,
