@@ -34,9 +34,9 @@ FROM (
                 AND dst.ship_type = ANY (:ship_types)
                 AND dst.mobile_type = ANY (:mobile_types)
                 AND fch.cell_x >= :min_cell_x
-                AND fch.cell_x < :max_cell_x
+                AND fch.cell_x <= :max_cell_x
                 AND fch.cell_y >= :min_cell_y
-                AND fch.cell_y < :max_cell_y
+                AND fch.cell_y <= :max_cell_y
                 AND fch.date_id BETWEEN :start_date_id AND :end_date_id
                 GROUP BY fch.partition_id
             ) q0
