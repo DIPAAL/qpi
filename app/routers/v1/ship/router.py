@@ -320,6 +320,12 @@ def add_trajectory_from_where_clause_to_query(qb: QueryBuilder, spatial_bounds: 
         temporal_bounds (bool): If true, the temporal bounds are added to the WHERE clause.
     """
     qb.add_sql("from_trajectory.sql")
+
+    # Add partition elimination
+    if temporal_bounds:
+        qb.add_where_from_string("dt.date_id BETWEEN :from_date AND :to_date")
+        qb.add_where_from_string("ft.start_date_id BETWEEN :from_date AND :to_date")
+
     if temporal_bounds and spatial_bounds:
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
                                  "span(timestamp_from_date_time_id(:from_date, :from_time), "
@@ -346,6 +352,11 @@ def add_cell_from_where_clause_to_query(qb: QueryBuilder, placeholders: dict, se
     """
     qb.add_sql("from_cell.sql")
     placeholders.update({"CELL_SIZE": search_method.value})
+
+    # Add partition elimination
+    if temporal_bounds:
+        qb.add_where_from_string("fc.entry_date_id BETWEEN :from_date AND :to_date")
+
     if temporal_bounds and spatial_bounds:
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), "
                                  "span(timestamp_from_date_time_id(:from_date, :from_time), "
