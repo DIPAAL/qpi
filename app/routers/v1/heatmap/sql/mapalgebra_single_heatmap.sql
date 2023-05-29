@@ -31,9 +31,9 @@ FROM (
                 AND dst.ship_type = ANY (:first_ship_types)
                 AND dst.mobile_type = ANY (:first_mobile_types)
                 AND fch.cell_x >= :min_cell_x
-                AND fch.cell_x < :max_cell_x
+                AND fch.cell_x <= :max_cell_x
                 AND fch.cell_y >= :min_cell_y
-                AND fch.cell_y < :max_cell_y
+                AND fch.cell_y <= :max_cell_y
                 AND fch.date_id BETWEEN :first_start_date_id AND :first_end_date_id
                 GROUP BY fch.partition_id
             ) q0
@@ -61,9 +61,9 @@ FROM (
                 AND dst.ship_type = ANY (:second_ship_types)
                 AND dst.mobile_type = ANY (:second_mobile_types)
                 AND fch.cell_x >= :min_cell_x
-                AND fch.cell_x < :max_cell_x
+                AND fch.cell_x <= :max_cell_x
                 AND fch.cell_y >= :min_cell_y
-                AND fch.cell_y < :max_cell_y
+                AND fch.cell_y <= :max_cell_y
                 AND fch.date_id BETWEEN :second_start_date_id AND :second_end_date_id
                 GROUP BY fch.partition_id
             ) q0
