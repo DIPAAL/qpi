@@ -59,6 +59,8 @@ def cell_facts(
         'ymax': y_max,
         'srid': srid,
         'stopped': stopped,
+        'start_date_id': int(start_timestamp.strftime("%Y%m%d")),
+        'end_date_id': int(end_timestamp.strftime("%Y%m%d")),
         'end_timestamp': end_timestamp,
         'start_timestamp': start_timestamp,
         'limit': limit,

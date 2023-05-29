@@ -232,6 +232,10 @@ def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bo
             bound_placeholder = "ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, :srid)"
         # Adding temporal filters to the query if provided
         if temporal_bounds:
+            # Add partition elimination
+            qb.add_where_from_string("dt.date_id BETWEEN :from_date AND :to_date")
+            qb.add_where_from_string("ft.start_date_id BETWEEN :from_date AND :to_date")
+
             if bound_placeholder != "":
                 bound_placeholder += ", "
             bound_placeholder += "span(timestamp_from_date_time_id(:from_date, :from_time), " \
