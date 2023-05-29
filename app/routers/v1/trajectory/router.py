@@ -229,7 +229,7 @@ def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bo
         qb.add_where_from_string("STBOX({BOUNDS}) && dt.trajectory")
         # Adding spatial filters to the query if provided
         if spatial_bounds:
-            bound_placeholder = "ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, :srid)"
+            bound_placeholder = "ST_Transform(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, :srid), 4326)"
         # Adding temporal filters to the query if provided
         if temporal_bounds:
             # Add partition elimination
