@@ -44,7 +44,7 @@ FROM (
                 JOIN dim_date dd on fch.date_id = dd.date_id
                 WHERE fch.spatial_resolution = :spatial_resolution
                 AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :heatmap_type_slug)
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= :end_timestamp
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) < :end_timestamp
                 AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= :start_timestamp
                 AND dst.ship_type = ANY (:ship_types)
                 AND dst.mobile_type = ANY (:mobile_types)
