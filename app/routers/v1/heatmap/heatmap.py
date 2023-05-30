@@ -108,7 +108,7 @@ def single_heatmap(
                                          description='The inclusive start time, '
                                                      'defines the start of the temporal bound.'),
         end: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
-                                       description='The inclusive end time, '
+                                       description='The exclusive end time, '
                                                    'defines the end of the temporal bound.'),
         dw=Depends(get_dw)):
     """Return a single heatmap, based on the parameters provided."""
@@ -290,7 +290,7 @@ def mapalgebra_heatmap(
                                                description='The inclusive start of the temporal bound for the '
                                                            'first raster.'),
         first_end: datetime.datetime = Query(default="2021-02-01T00:00:00Z",
-                                             description='The inclusive end of the temporal bound for the '
+                                             description='The exclusive end of the temporal bound for the '
                                                          'first raster.'),
         second_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
                                                       description='The mobile types to include in the second raster.'),
@@ -300,7 +300,7 @@ def mapalgebra_heatmap(
                                                 description='The inclusive start of the temporal bound for the '
                                                             'second raster.'),
         second_end: datetime.datetime = Query(default="2021-08-01T00:00:00Z",
-                                              description='The inclusive end of the temporal bound for the '
+                                              description='The exclusive end of the temporal bound for the '
                                                           'second raster.'),
         dw=Depends(get_dw)
 ):
