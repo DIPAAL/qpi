@@ -115,10 +115,7 @@ def geo_tiff_to_png(
                 # use a logarithmic colormap to show raster
                 plot = show(
                     data,
-                    transform=raster.transform * raster.transform.scale(
-                        (raster.width / data.shape[-1]),
-                        (raster.height / data.shape[-2])
-                    ),
+                    transform=raster.transform * raster.transform.scale(1/scale, 1/scale),
                     ax=ax, cmap='turbo',
                     norm=norm,
                     interpolation='none'
