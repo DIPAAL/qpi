@@ -114,9 +114,6 @@ async def get_trajectories(
     # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
     _add_trajectory_query(crop, qb, time_series_representation_type)
 
-    # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
-    _add_joins_ship_relations(qb, ship_params, ship_type_params)
-
     # If certain parameters are provided, then they are added to the query as a WHERE/AND clause, filtering results.
     _filter_operator(qb, params, {"ds": ship_params, "dst": ship_type_params, "dns": nav_status_params}, "IN")
     _filter_operator(qb, params, {"ft": trajectory_params}, "=")
@@ -159,29 +156,6 @@ def _add_trajectory_query(crop: bool, qb: QueryBuilder,
             qb.add_sql(f"select_{time_series_representation_type.value}.sql")
     except Exception as e:
         raise HTTPException(status_code=400, detail="Invalid time series representation type") from e
-
-
-def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict[str, list[str | int]],
-                              ship_type_params: dict[str, list[str]]) -> None:
-    """
-    Add JOIN clauses for attributes related to ships and ship types to the query builder, if applicable.
-
-    Args:
-        qb: The query builder to add the JOIN clauses to.
-        ship_params: The parameters for the ship.
-        ship_type_params: The parameters for the ship type.
-    """
-    ship_sql_str = "JOIN dim_ship ds on ft.ship_id = ds.ship_id"
-    ship_type_sql_str = "JOIN dim_ship_type dst on ds.ship_type_id = dst.ship_type_id"
-    ship_join_added = False
-    if any(value is not None for value in ship_params.values()):
-        qb.add_string(ship_sql_str)
-        ship_join_added = True
-    if ship_type_params["mobile_type"] is not None:
-        if ship_join_added:
-            qb.add_string(ship_type_sql_str)
-        else:
-            qb.add_string(ship_sql_str).add_string(ship_type_sql_str)
 
 
 def _update_params_temporal(params: dict[str, Any], temporal_dict: dict[str, datetime]) -> bool:
@@ -283,8 +257,8 @@ def _set_cropped_param(temporal_params: dict[str, datetime], params: dict[str, A
     if not cropped:
         return None
     else:
-        from_datetime = temporal_params["from_datetime"]
-        to_datetime = temporal_params["to_datetime"]
+        from_datetime = temporal_params["start_timestamp"]
+        to_datetime = temporal_params["end_timestamp"]
 
         # Creates a string representation of a time span in a MobilityDB compatible format
         tstzspan_string = "[" + from_datetime.strftime("%Y-%m-%d %H:%M:%S") + ", "\
@@ -295,8 +269,8 @@ def _set_cropped_param(temporal_params: dict[str, datetime], params: dict[str, A
 
 def _validate_temporal_bounds(temporal_params: dict[str, datetime]) -> None:
     """Raise an HTTPException if the temporal bounds are the same."""
-    start_time = temporal_params["from_datetime"]
-    end_time = temporal_params["to_datetime"]
+    start_time = temporal_params["start_timestamp"]
+    end_time = temporal_params["end_timestamp"]
 
     if start_time is None or end_time is None:
         return None
