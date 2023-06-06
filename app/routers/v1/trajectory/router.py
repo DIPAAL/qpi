@@ -151,7 +151,7 @@ def _add_trajectory_query(crop: bool, qb: QueryBuilder,
         time_series_representation_type: The time series representation of the trajectory data in the result.
     """
     try:
-        if cropped_trajectories:
+        if crop:
             qb.add_sql(f"select_{time_series_representation_type.value}_cropped.sql")
         else:
             qb.add_sql(f"select_{time_series_representation_type.value}.sql")
