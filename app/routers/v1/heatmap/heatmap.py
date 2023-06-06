@@ -449,7 +449,7 @@ def multi_heatmap(
 
     result, query_time_taken_sec = measure_time(lambda: dw.execute(text(query), params).fetchall())
 
-    if result is None:
+    if result is None or len(result) == 0:
         raise HTTPException(404, "No heatmap data found given the parameters.")
 
     max_value = max([r[2] for r in result])
