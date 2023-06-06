@@ -2,6 +2,7 @@
 import io
 import multiprocessing
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from rasterio.enums import Resampling
 from typing import List, Tuple
 
 import numpy as np
@@ -14,6 +15,8 @@ from PIL import Image
 import imageio.v2 as imageio
 
 from app.schemas.multi_output_format import MultiOutputFormat
+
+max_width, max_height = [2000, 2000]
 
 
 def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title: str, max_value: float):
@@ -94,14 +97,28 @@ def geo_tiff_to_png(
                 show(
                     satellite,
                     ax=ax,
-                    origin='upper', )
+                    origin='upper',
+                )
+
+                # scale the raster to fit the max width and height
+                scale = min(max_width / raster.width, max_height / raster.height)
+                data = raster.read(
+                    masked=True,
+                    out_shape=(
+                        raster.count,
+                        int(raster.height * scale),
+                        int(raster.width * scale)
+                    ),
+                    resampling=Resampling.nearest
+                )
 
                 # use a logarithmic colormap to show raster
                 plot = show(
-                    raster,
+                    data,
+                    transform=raster.transform * raster.transform.scale(1/scale, 1/scale),
                     ax=ax, cmap='turbo',
                     norm=norm,
-                    interpolation='none',
+                    interpolation='none'
                 )
 
                 im = plot.get_images()[1]
