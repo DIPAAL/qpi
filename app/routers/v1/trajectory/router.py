@@ -74,13 +74,13 @@ async def get_trajectories(
                           description="The spatial reference system for the trajectory."),
         start_timestamp: datetime | None = Query(default=None,
                                                  example="2022-01-01T00:00:00Z",
-                                                 description="The inclusive start date, "
-                                                             "defines the start of the temporal "
-                                                             "bound. If not provided, the earliest date is used."),
+                                                 description="The inclusive timestamp that defines "
+                                                             "the start of the temporal bound. "
+                                                             "If not provided, the earliest date is used."),
         end_timestamp: datetime | None = Query(default=None,
                                                example="2022-01-01T00:00:00Z",
-                                               description="The inclusive end date, defines the end of "
-                                                           "the temporal bound. "
+                                               description="The inclusive timestamp that defines "
+                                                           "the end of the the temporal bound. "
                                                            "If not provided, the latest date is used."),
         stopped: bool | None = Query(default=None,
                                      description="If the result must represents stopped ships."

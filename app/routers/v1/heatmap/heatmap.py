@@ -105,11 +105,11 @@ def single_heatmap(
                                   description='Limits the heatmaps spatial extent to the provided ENC cell. '
                                               'If provided, this parameter overrides any other spatial constraints.'),
         start_timestamp: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
-                                                   description='The inclusive start time, '
-                                                               'defines the start of the temporal bound.'),
+                                                   description='The inclusive timestamp that defines '
+                                                               'the start of the temporal bound.'),
         end_timestamp: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
-                                                 description='The exclusive end time, '
-                                                             'defines the end of the temporal bound.'),
+                                                 description='The exclusive timestamp that defines '
+                                                             'the end of the temporal bound.'),
         dw=Depends(get_dw)):
     """Return a single heatmap, based on the parameters provided."""
     if srid != 3034:
@@ -287,20 +287,24 @@ def mapalgebra_heatmap(
         first_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                                  description='The ship types to include in the first raster.'),
         first_start_timestamp: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
-                                                         description='The inclusive start of the temporal bound for '
+                                                         description='The inclusive timestamp that defines '
+                                                                     'the start of the temporal bound for '
                                                                      'the first raster.'),
         first_end_timestamp: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
-                                                       description='The exclusive end of the temporal bound for the '
+                                                       description='The exclusive timestamp that defines '
+                                                                   'the end of the temporal bound for the '
                                                                    'first raster.'),
         second_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
                                                       description='The mobile types to include in the second raster.'),
         second_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                                   description='The ship types to include in the second raster.'),
         second_start_timestamp: datetime.datetime = Query(default="2022-07-01T00:00:00Z",
-                                                          description='The inclusive start of the temporal bound for '
+                                                          description='The inclusive timestamp that defines '
+                                                                      'the start of the temporal bound for '
                                                                       'the second raster.'),
         second_end_timestamp: datetime.datetime = Query(default="2022-08-01T00:00:00Z",
-                                                        description='The exclusive end of the temporal bound for the '
+                                                        description='The exclusive timestamp that defines '
+                                                                    'the end of the temporal bound for the '
                                                                     'second raster.'),
         dw=Depends(get_dw)
 ):
@@ -406,11 +410,11 @@ def multi_heatmap(
         ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                            description='Limits what ship type the ships must belong to.'),
         start_timestamp: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
-                                                   description='The inclusive start time, '
-                                                               'defines the start of the temporal bound.'),
+                                                   description='The inclusive timestamp that defines '
+                                                               'start of the temporal bound.'),
         end_timestamp: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
-                                                 description='The exclusive end time, '
-                                                             'defines the end of the temporal bound.'),
+                                                 description='The exclusive timestamp that defines '
+                                                             'the end of the temporal bound.'),
         dw=Depends(get_dw)
 ):
     """Return a multi heatmap, based on the parameters provided."""

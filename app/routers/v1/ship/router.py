@@ -183,11 +183,11 @@ async def ships(
         # Temporal bounds
         start_timestamp: datetime = Query(default=None,
                                           example="2022-01-01T00:00:00Z",
-                                          description="Filter for ships with a first position after or at the "
-                                                      "given datetime."),
+                                          description="The inclusive timestamp that defines "
+                                                      "the start of the temporal bound."),
         end_timestamp: datetime = Query(default=None,
-                                        description="Filter for ships with a last position before or at the "
-                                                    "given datetime."),
+                                        description="The inclusive timestamp that defines "
+                                                    "the end of the temporal bound."),
         # Spatial bounds
         x_min: int = Query(default=None,
                            description="Filter for ships with a first position with a longitude greater than or equal "
