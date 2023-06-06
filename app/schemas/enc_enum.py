@@ -5,6 +5,7 @@ from enum import Enum
 class EncCell(str, Enum):
     """Enum of available ENC cells."""
 
+    dipaal_spatial_domain = "DIPAAL Spatial Domain"
     aabenraa = "Aabenraa"
     aabenraa_havn = "Aabenraa Havn"
     aalborg_oesthavn = "Aalborg Østhavn"
