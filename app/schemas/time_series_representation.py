@@ -5,5 +5,5 @@ from enum import Enum
 class TimeSeriesRepresentation(str, Enum):
     """The content type of the data."""
 
-    GEOJSON = "GEOJSON"
+    GEOJSON = "GeoJSON"
     MFJSON = "MFJSON"

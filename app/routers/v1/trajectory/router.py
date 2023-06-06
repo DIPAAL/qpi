@@ -86,6 +86,10 @@ async def get_trajectories(
                                      description="If the result must represents stopped ships."
                                                  "\nIf not provided, both stopped and "
                                                  "non-stopped ships are represented."),
+        crop: bool = Query(default=False,
+                           description="Whether to crop spatio-temporal and temporal data in the result "
+                                       "to the spatio-temporal bounds. "
+                                       "If not provided, the result is not cropped."),
         time_series_representation_type: TimeSeriesRepresentation =
         Query(default=TimeSeriesRepresentation.MFJSON,
               description="The time series representation of the trajectory data in the result."),
@@ -103,14 +107,12 @@ async def get_trajectories(
 
     qb = QueryBuilder(SQL_PATH)
 
-    # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
-    if time_series_representation_type == TimeSeriesRepresentation.MFJSON:
-        qb.add_sql("select_MFJSON.sql")
-    elif time_series_representation_type == TimeSeriesRepresentation.GEOJSON:
-        qb.add_sql("select_GeoJSON.sql")
+    # Check if cropped trajectories is requested, and set the parameters accordingly.
+    _validate_temporal_bounds(temporal_params)
+    _set_cropped_param(temporal_params, params, crop)
 
-    # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
-    _add_joins_ship_relations(qb, ship_params, ship_type_params)
+    # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
+    _add_trajectory_query(crop, qb, time_series_representation_type)
 
     # If certain parameters are provided, then they are added to the query as a WHERE/AND clause, filtering results.
     _filter_operator(qb, params, {"ds": ship_params, "dst": ship_type_params, "dns": nav_status_params}, "IN")
@@ -137,27 +139,23 @@ async def get_trajectories(
     return JSONResponse(response_json(final_query, dw, params))
 
 
-def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict[str, list[str | int]],
-                              ship_type_params: dict[str, list[str]]) -> None:
+def _add_trajectory_query(crop: bool, qb: QueryBuilder,
+                          time_series_representation_type: TimeSeriesRepresentation) -> None:
     """
-    Add JOIN clauses for attributes related to ships and ship types to the query builder, if applicable.
+    Add SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
 
     Args:
-        qb: The query builder to add the JOIN clauses to.
-        ship_params: The parameters for the ship.
-        ship_type_params: The parameters for the ship type.
+        crop: If the result must be cropped to the temporal bound.
+        qb: The query builder to add the clauses to.
+        time_series_representation_type: The time series representation of the trajectory data in the result.
     """
-    ship_sql_str = "JOIN dim_ship ds on ft.ship_id = ds.ship_id"
-    ship_type_sql_str = "JOIN dim_ship_type dst on ds.ship_type_id = dst.ship_type_id"
-    ship_join_added = False
-    if any(value is not None for value in ship_params.values()):
-        qb.add_string(ship_sql_str)
-        ship_join_added = True
-    if ship_type_params["mobile_type"] is not None:
-        if ship_join_added:
-            qb.add_string(ship_type_sql_str)
+    try:
+        if crop:
+            qb.add_sql(f"select_{time_series_representation_type.value}_cropped.sql")
         else:
-            qb.add_string(ship_sql_str).add_string(ship_type_sql_str)
+            qb.add_sql(f"select_{time_series_representation_type.value}.sql")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid time series representation type") from e
 
 
 def _update_params_temporal(params: dict[str, Any], temporal_dict: dict[str, datetime]) -> bool:
@@ -245,3 +243,37 @@ def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bo
             bound_placeholder += "span(timestamp_from_date_time_id(:start_date, :start_time), " \
                                  "timestamp_from_date_time_id(:end_date, :end_time), True, True)"
     qb.format_query({"BOUNDS": bound_placeholder}) if bound_placeholder != "" else None
+
+
+def _set_cropped_param(temporal_params: dict[str, datetime], params: dict[str, Any], cropped: bool) -> None:
+    """
+    Set the cropped parameter in the params dict if the trajectory must be cropped.
+
+    Args:
+        temporal_params: The temporal parameters.
+        params: The params dict to add the values to.
+        cropped: True if the trajectory must be cropped, False otherwise.
+    """
+    if not cropped:
+        return None
+    else:
+        from_datetime = temporal_params["start_timestamp"]
+        to_datetime = temporal_params["end_timestamp"]
+
+        # Creates a string representation of a time span in a MobilityDB compatible format
+        tstzspan_string = "[" + from_datetime.strftime("%Y-%m-%d %H:%M:%S") + ", "\
+                              + to_datetime.strftime("%Y-%m-%d %H:%M:%S") + "]"
+
+        _update_params(params, {"crop_span": tstzspan_string})
+
+
+def _validate_temporal_bounds(temporal_params: dict[str, datetime]) -> None:
+    """Raise an HTTPException if the temporal bounds are the same."""
+    start_time = temporal_params["start_timestamp"]
+    end_time = temporal_params["end_timestamp"]
+
+    if start_time is None or end_time is None:
+        return None
+
+    if start_time == end_time:
+        raise HTTPException(status_code=400, detail="The temporal bounds must not be the same.")
