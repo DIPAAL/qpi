@@ -72,14 +72,16 @@ async def get_trajectories(
                                                                  "\nIf not provided, all mobile types are included."),
         srid: int = Query(default=4326,
                           description="The spatial reference system for the trajectory."),
-        from_date: datetime | None = Query(default=None,
-                                           example="2021-01-01T00:00:00Z",
-                                           description="The inclusive start date, defines the start of the temporal "
-                                                       "bound. If not provided, the earliest date is used."),
-        to_date: datetime | None = Query(default=None,
-                                         example="2021-01-01T00:00:00Z",
-                                         description="The inclusive end date, defines the end of "
-                                                     "the temporal bound. If not provided, the latest date is used."),
+        start_timestamp: datetime | None = Query(default=None,
+                                                 example="2022-01-01T00:00:00Z",
+                                                 description="The inclusive timestamp that defines "
+                                                             "the start of the temporal bound. "
+                                                             "If not provided, the earliest date is used."),
+        end_timestamp: datetime | None = Query(default=None,
+                                               example="2022-01-01T00:00:00Z",
+                                               description="The inclusive timestamp that defines "
+                                                           "the end of the the temporal bound. "
+                                                           "If not provided, the latest date is used."),
         stopped: bool | None = Query(default=None,
                                      description="If the result must represents stopped ships."
                                                  "\nIf not provided, both stopped and "
@@ -95,7 +97,7 @@ async def get_trajectories(
     ship_params = {"mmsi": mmsi, "imo": imo, "name": name, "country": country, "callsign": callsign}
     ship_type_params = {"mobile_type": get_values_from_enum_list(mobile_type, MobileType) if mobile_type else None}
     nav_status_params = {"destination": destination}
-    temporal_params = {"from_datetime": from_date, "to_datetime": to_date}
+    temporal_params = {"start_timestamp": start_timestamp, "end_timestamp": end_timestamp}
     # SRID is not required to be complete, and is therefore not part of this dict.
     spatial_params = {"xmin": x_min, "ymin": y_min, "xmax": x_max, "ymax": y_max}
 
@@ -168,15 +170,17 @@ def _update_params_temporal(params: dict[str, Any], temporal_dict: dict[str, dat
         params: The params dict to add the values to.
         temporal_dict: The dict containing the temporal values to add.
     """
-    if temporal_dict["from_datetime"] is None and temporal_dict["to_datetime"] is None:
+    if temporal_dict["start_timestamp"] is None and temporal_dict["end_timestamp"] is None:
         return False
-    temporal_dict["from_datetime"] = temporal_dict["from_datetime"] if temporal_dict["from_datetime"] else datetime.min
-    temporal_dict["to_datetime"] = temporal_dict["to_datetime"] if temporal_dict["to_datetime"] else datetime.max
+    temporal_dict["start_timestamp"] = temporal_dict["start_timestamp"] \
+        if temporal_dict["start_timestamp"] else datetime.min
+    temporal_dict["end_timestamp"] = temporal_dict["end_timestamp"] \
+        if temporal_dict["end_timestamp"] else datetime.max
     _update_params(params,
-                   {"from_date": temporal_dict["from_datetime"].strftime("%Y%m%d"),
-                    "from_time": temporal_dict["from_datetime"].strftime("%H%M%S"),
-                    "to_date": temporal_dict["to_datetime"].strftime("%Y%m%d"),
-                    "to_time": temporal_dict["to_datetime"].strftime("%H%M%S")})
+                   {"start_date": temporal_dict["start_timestamp"].strftime("%Y%m%d"),
+                    "start_time": temporal_dict["start_timestamp"].strftime("%H%M%S"),
+                    "end_date": temporal_dict["end_timestamp"].strftime("%Y%m%d"),
+                    "end_time": temporal_dict["end_timestamp"].strftime("%H%M%S")})
     return True
 
 
@@ -233,11 +237,11 @@ def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bo
         # Adding temporal filters to the query if provided
         if temporal_bounds:
             # Add partition elimination
-            qb.add_where_from_string("dt.date_id BETWEEN :from_date AND :to_date")
-            qb.add_where_from_string("ft.start_date_id BETWEEN :from_date AND :to_date")
+            qb.add_where_from_string("dt.date_id BETWEEN :start_date AND :end_date")
+            qb.add_where_from_string("ft.start_date_id BETWEEN :start_date AND :end_date")
 
             if bound_placeholder != "":
                 bound_placeholder += ", "
-            bound_placeholder += "span(timestamp_from_date_time_id(:from_date, :from_time), " \
-                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)"
+            bound_placeholder += "span(timestamp_from_date_time_id(:start_date, :start_time), " \
+                                 "timestamp_from_date_time_id(:end_date, :end_time), True, True)"
     qb.format_query({"BOUNDS": bound_placeholder}) if bound_placeholder != "" else None
