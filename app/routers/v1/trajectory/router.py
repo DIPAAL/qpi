@@ -84,10 +84,10 @@ async def get_trajectories(
                                      description="If the result must represents stopped ships."
                                                  "\nIf not provided, both stopped and "
                                                  "non-stopped ships are represented."),
-        crop_trajectories: bool = Query(default=False,
-                                        description="Whether to crop spatio-temporal and temporal data in the result "
-                                                    "to the spatio-temporal bounds. "
-                                                    "If not provided, the result is not cropped."),
+        crop: bool = Query(default=False,
+                           description="Whether to crop spatio-temporal and temporal data in the result "
+                                       "to the spatio-temporal bounds. "
+                                       "If not provided, the result is not cropped."),
         time_series_representation_type: TimeSeriesRepresentation =
         Query(default=TimeSeriesRepresentation.MFJSON,
               description="The time series representation of the trajectory data in the result."),
@@ -107,10 +107,10 @@ async def get_trajectories(
 
     # Check if cropped trajectories is requested, and set the parameters accordingly.
     _validate_temporal_bounds(temporal_params)
-    _set_cropped_param(temporal_params, params, crop_trajectories)
+    _set_cropped_param(temporal_params, params, crop)
 
     # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
-    _add_trajectory_query(crop_trajectories, qb, time_series_representation_type)
+    _add_trajectory_query(crop, qb, time_series_representation_type)
 
     # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
     _add_joins_ship_relations(qb, ship_params, ship_type_params)
