@@ -150,18 +150,13 @@ def _add_trajectory_query(cropped_trajectories: bool, qb: QueryBuilder,
         qb: The query builder to add the clauses to.
         time_series_representation_type: The time series representation of the trajectory data in the result.
     """
-    if time_series_representation_type == TimeSeriesRepresentation.MFJSON:
+    try:
         if cropped_trajectories:
-            qb.add_sql("select_MFJSON_cropped.sql")
+            qb.add_sql(f"select_{time_series_representation_type.value}_cropped.sql")
         else:
-            qb.add_sql("select_MFJSON.sql")
-    elif time_series_representation_type == TimeSeriesRepresentation.GEOJSON:
-        if cropped_trajectories:
-            qb.add_sql("select_GeoJSON_cropped.sql")
-        else:
-            qb.add_sql("select_GeoJSON.sql")
-    else:
-        raise HTTPException(status_code=400, detail="Invalid time series representation type")
+            qb.add_sql(f"select_{time_series_representation_type.value}.sql")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid time series representation type") from e
 
 
 def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict[str, list[str | int]],
