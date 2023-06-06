@@ -140,13 +140,13 @@ async def get_trajectories(
     return JSONResponse(response_json(final_query, dw, params))
 
 
-def _add_trajectory_query(cropped_trajectories: bool, qb: QueryBuilder,
+def _add_trajectory_query(crop: bool, qb: QueryBuilder,
                           time_series_representation_type: TimeSeriesRepresentation) -> None:
     """
     Add SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
 
     Args:
-        cropped_trajectories: If the result must be cropped to the temporal bound.
+        crop: If the result must be cropped to the temporal bound.
         qb: The query builder to add the clauses to.
         time_series_representation_type: The time series representation of the trajectory data in the result.
     """
