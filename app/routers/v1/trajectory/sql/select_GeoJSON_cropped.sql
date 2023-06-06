@@ -7,9 +7,10 @@ SELECT ft.trajectory_sub_id,
         END
        ) as eta_timestamp,
        json_build_object(
-           'trajectory', st_asgeojson(trajectory::geometry, options := 2)::jsonb
-                             || json_build_object(
-                                 'datetimes',timestamps(trajectory))::jsonb)
+           'trajectory', st_asgeojson(atstbox(dt.trajectory, STBOX({BOUNDS}))::geometry, options := 2)::jsonb
+           || json_build_object(
+               'datetimes',timestamps(
+                   atstbox(dt.trajectory, STBOX({BOUNDS}))))::jsonb)
            as trajectory,
        asMFJSON(attime(dt.rot, tstzspan :crop_span))::json as rot,
        asMFJSON(attime(dt.heading, tstzspan :crop_span))::json as heading,

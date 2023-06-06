@@ -6,7 +6,7 @@ SELECT ft.trajectory_sub_id,
             ELSE timestamp_from_date_time_id(ft.eta_date_id, ft.eta_time_id)
         END
        ) as eta_timestamp,
-       asMFJSON(attime(dt.trajectory, tstzspan :crop_span))::json as trajectory,
+       asMFJSON(atstbox(dt.trajectory, stbox({BOUNDS})))::json as trajectory,
        asMFJSON(attime(dt.rot, tstzspan :crop_span))::json as rot,
        asMFJSON(attime(dt.heading, tstzspan :crop_span))::json as heading,
        asMFJSON(attime(dt.draught, tstzspan :crop_span))::json as draught,

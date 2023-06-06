@@ -84,9 +84,10 @@ async def get_trajectories(
                                      description="If the result must represents stopped ships."
                                                  "\nIf not provided, both stopped and "
                                                  "non-stopped ships are represented."),
-        cropped_trajectories: bool = Query(default=False,
-                                           description="If the result must be cropped to the temporal bound."
-                                                       "If false, the result will contain the full trajectory."),
+        crop_trajectories: bool = Query(default=False,
+                                        description="Whether to crop spatio-temporal and temporal data in the result "
+                                                    "to the spatio-temporal bounds. "
+                                                    "If not provided, the result is not cropped."),
         time_series_representation_type: TimeSeriesRepresentation =
         Query(default=TimeSeriesRepresentation.MFJSON,
               description="The time series representation of the trajectory data in the result."),
@@ -105,10 +106,11 @@ async def get_trajectories(
     qb = QueryBuilder(SQL_PATH)
 
     # Check if cropped trajectories is requested, and set the parameters accordingly.
-    _set_cropped_param(temporal_params, params, cropped_trajectories)
+    _validate_temporal_bounds(temporal_params)
+    _set_cropped_param(temporal_params, params, crop_trajectories)
 
     # Adding SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
-    _select_from_join(cropped_trajectories, qb, time_series_representation_type)
+    _add_trajectory_query(crop_trajectories, qb, time_series_representation_type)
 
     # If parameters for ships is provided, a JOIN clause between the fact_trajectory and dim_ship is added to the query.
     _add_joins_ship_relations(qb, ship_params, ship_type_params)
@@ -138,7 +140,8 @@ async def get_trajectories(
     return JSONResponse(response_json(final_query, dw, params))
 
 
-def _select_from_join(cropped_trajectories, qb, time_series_representation_type):
+def _add_trajectory_query(cropped_trajectories: bool, qb: QueryBuilder,
+                          time_series_representation_type: TimeSeriesRepresentation) -> None:
     """
     Add SELECT, FROM and JOIN clauses to the query, depending on the requested content type.
 
@@ -157,6 +160,8 @@ def _select_from_join(cropped_trajectories, qb, time_series_representation_type)
             qb.add_sql("select_GeoJSON_cropped.sql")
         else:
             qb.add_sql("select_GeoJSON.sql")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid time series representation type")
 
 
 def _add_joins_ship_relations(qb: QueryBuilder, ship_params: dict[str, list[str | int]],
@@ -263,7 +268,7 @@ def _filter_temporal_spatial(qb: QueryBuilder, spatial_bounds: bool, temporal_bo
     qb.format_query({"BOUNDS": bound_placeholder}) if bound_placeholder != "" else None
 
 
-def _set_cropped_param(temporal_params: dict[str, datetime], params: dict[str, Any], cropped: bool):
+def _set_cropped_param(temporal_params: dict[str, datetime], params: dict[str, Any], cropped: bool) -> None:
     """
     Set the cropped parameter in the params dict if the trajectory must be cropped.
 
@@ -277,12 +282,21 @@ def _set_cropped_param(temporal_params: dict[str, datetime], params: dict[str, A
     else:
         from_datetime = temporal_params["from_datetime"]
         to_datetime = temporal_params["to_datetime"]
-        if from_datetime == to_datetime:
-            raise HTTPException(status_code=400, detail="When requesting cropping trajectories, the temporal bound "
-                                                        "must have a different from and to datetime to create a span.")
 
         # Creates a string representation of a time span in a MobilityDB compatible format
         tstzspan_string = "[" + from_datetime.strftime("%Y-%m-%d %H:%M:%S") + ", "\
                               + to_datetime.strftime("%Y-%m-%d %H:%M:%S") + "]"
 
         _update_params(params, {"crop_span": tstzspan_string})
+
+
+def _validate_temporal_bounds(temporal_params: dict[str, datetime]) -> None:
+    """Raise an HTTPException if the temporal bounds are the same."""
+    start_time = temporal_params["from_datetime"]
+    end_time = temporal_params["to_datetime"]
+
+    if start_time is None or end_time is None:
+        return None
+
+    if start_time == end_time:
+        raise HTTPException(status_code=400, detail="The temporal bounds must not be the same.")
