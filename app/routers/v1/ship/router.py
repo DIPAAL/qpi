@@ -181,13 +181,13 @@ async def ships(
                                                    description="Determines the search method used to find ships when "
                                                                "using spatial or temporal filters."),
         # Temporal bounds
-        from_datetime: datetime = Query(default=None,
-                                        example="2021-01-01T00:00:00Z",
-                                        description="Filter for ships with a first position after or at the "
+        start_timestamp: datetime = Query(default=None,
+                                          example="2022-01-01T00:00:00Z",
+                                          description="Filter for ships with a first position after or at the "
+                                                      "given datetime."),
+        end_timestamp: datetime = Query(default=None,
+                                        description="Filter for ships with a last position before or at the "
                                                     "given datetime."),
-        to_datetime: datetime = Query(default=None,
-                                      description="Filter for ships with a last position before or at the "
-                                                  "given datetime."),
         # Spatial bounds
         x_min: int = Query(default=None,
                            description="Filter for ships with a first position with a longitude greater than or equal "
@@ -236,15 +236,15 @@ async def ships(
     params.update(spatial_params)
 
     # Setup of temporal bounds if provided
-    temporal_params: dict = {"from_date": None, "from_time": None, "to_date": None, "to_time": None}
+    temporal_params: dict = {"start_date": None, "start_time": None, "end_date": None, "end_time": None}
 
-    update_params_datetime(temporal_params, from_datetime, "from")
-    update_params_datetime(temporal_params, to_datetime, "to")
+    update_params_datetime(temporal_params, start_timestamp, "start")
+    update_params_datetime(temporal_params, end_timestamp, "end")
 
     temporal_bounds = True if any(value is not None for value in temporal_params.values()) else False
 
     # If temporal bounds are provided, but not complete, set the leftover bound to its min or max values
-    update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, from_datetime, to_datetime)
+    update_params_datetime_min_max_if_none(temporal_params, temporal_bounds, start_timestamp, end_timestamp)
 
     params.update(temporal_params)
 
@@ -323,19 +323,19 @@ def add_trajectory_from_where_clause_to_query(qb: QueryBuilder, spatial_bounds: 
 
     # Add partition elimination
     if temporal_bounds:
-        qb.add_where_from_string("dt.date_id BETWEEN :from_date AND :to_date")
-        qb.add_where_from_string("ft.start_date_id BETWEEN :from_date AND :to_date")
+        qb.add_where_from_string("dt.date_id BETWEEN :start_date AND :end_date")
+        qb.add_where_from_string("ft.start_date_id BETWEEN :start_date AND :end_date")
 
     if temporal_bounds and spatial_bounds:
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326), "
-                                 "span(timestamp_from_date_time_id(:from_date, :from_time), "
-                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && dt.trajectory")
+                                 "span(timestamp_from_date_time_id(:start_date, :start_time), "
+                                 "timestamp_from_date_time_id(:end_date, :end_time), True, True)) && dt.trajectory")
     elif spatial_bounds:
         qb.add_where_from_string("WHERE STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 4326)) && dt.trajectory")
 
     elif temporal_bounds:
-        qb.add_where_from_string("STBOX(span(timestamp_from_date_time_id(:from_date, :from_time), "
-                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && dt.trajectory")
+        qb.add_where_from_string("STBOX(span(timestamp_from_date_time_id(:start_date, :start_time), "
+                                 "timestamp_from_date_time_id(:end_date, :end_time), True, True)) && dt.trajectory")
 
 
 def add_cell_from_where_clause_to_query(qb: QueryBuilder, placeholders: dict, search_method: SearchMethodSpatial,
@@ -359,50 +359,52 @@ def add_cell_from_where_clause_to_query(qb: QueryBuilder, placeholders: dict, se
 
     if temporal_bounds and spatial_bounds:
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), "
-                                 "span(timestamp_from_date_time_id(:from_date, :from_time), "
-                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && fc.st_bounding_box")
+                                 "span(timestamp_from_date_time_id(:start_date, :start_time), "
+                                 "timestamp_from_date_time_id(:end_date, :end_time), True, True)) "
+                                 "&& fc.st_bounding_box")
     elif temporal_bounds:
-        qb.add_where_from_string("STBOX(span(timestamp_from_date_time_id(:from_date, :from_time), "
-                                 "timestamp_from_date_time_id(:to_date, :to_time), True, True)) && fc.st_bounding_box")
+        qb.add_where_from_string("STBOX(span(timestamp_from_date_time_id(:start_date, :start_time), "
+                                 "timestamp_from_date_time_id(:end_date, :end_time), True, True)) "
+                                 "&& fc.st_bounding_box")
     elif spatial_bounds:
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034)) && fc.st_bounding_box")
 
 
-def update_params_datetime(param_dict: dict, dt: datetime, from_or_to: str) -> None:
+def update_params_datetime(param_dict: dict, dt: datetime, start_or_end: str) -> None:
     """
     Update the given parameter dict with the given parameters.
 
     Args:
         param_dict (dict): The parameter dict to update.
         dt (datetime): The date and time to update the parameter dict with.
-        from_or_to (str): A string, either "from" or "to" to indicate if the datetime is the upper or lower bound
+        start_or_end (str): A string, either "start" or "end" to indicate if the datetime is the upper or lower bound
          of the temporal bounds.
     """
     if dt:
         param_dict.update({
-            f'{from_or_to}_date': int(dt.strftime("%Y%m%d")),
-            f'{from_or_to}_time': int(dt.strftime("%H%M%S"))
+            f'{start_or_end}_date': int(dt.strftime("%Y%m%d")),
+            f'{start_or_end}_time': int(dt.strftime("%H%M%S"))
         })
 
 
 def update_params_datetime_min_max_if_none(temporal_params: dict, temporal_bounds: bool,
-                                           from_datetime: datetime, to_datetime: datetime) -> None:
+                                           start_timestamp: datetime, end_timestamp: datetime) -> None:
     """
     Update the temporal parameters to min and max datetime if the temporal bounds are provided, but not complete.
 
     Args:
         temporal_params (dict): The temporal parameters to update.
         temporal_bounds (bool): If true, the temporal bounds are added to the temporal parameters.
-        from_datetime (datetime): The from datetime.
-        to_datetime (datetime): The to datetime.
+        start_timestamp (datetime): The start timestamp.
+        end_timestamp (datetime): The end timestamp.
     """
     if temporal_bounds and None in temporal_params.values():
-        if from_datetime is None:
-            temporal_params["from_date"] = datetime.min.strftime("%Y%m%d")
-            temporal_params["from_time"] = datetime.min.strftime("%H%M%S")
-        elif to_datetime is None:
-            temporal_params["to_date"] = datetime.max.strftime("%Y%m%d")
-            temporal_params["to_time"] = datetime.max.strftime("%H%M%S")
+        if start_timestamp is None:
+            temporal_params["start_date"] = datetime.min.strftime("%Y%m%d")
+            temporal_params["start_time"] = datetime.min.strftime("%H%M%S")
+        elif end_timestamp is None:
+            temporal_params["end_date"] = datetime.max.strftime("%Y%m%d")
+            temporal_params["end_time"] = datetime.max.strftime("%H%M%S")
 
 
 def add_filters_to_query_and_param(qb: QueryBuilder, relation_name: str, filter_params: dict, params: dict) -> None:

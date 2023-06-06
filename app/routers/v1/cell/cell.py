@@ -37,7 +37,7 @@ def cell_facts(
         srid: int = Query(default=3034,
                           description='The srid projection used for the defined bounding rectangle.'),
         end_timestamp: datetime = Query(default=datetime.max,
-                                        example='2022-01-01T00:00:00Z',
+                                        example='2022-02-01T00:00:00Z',
                                         description='The inclusive timestamp that defines'
                                         ' the end temporal bound of the result.'),
         start_timestamp: datetime = Query(default=datetime.min,

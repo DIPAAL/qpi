@@ -104,12 +104,12 @@ def single_heatmap(
         enc_cell: EncCell = Query(default=None,
                                   description='Limits the heatmaps spatial extent to the provided ENC cell. '
                                               'If provided, this parameter overrides any other spatial constraints.'),
-        start: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
-                                         description='The inclusive start time, '
-                                                     'defines the start of the temporal bound.'),
-        end: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
-                                       description='The exclusive end time, '
-                                                   'defines the end of the temporal bound.'),
+        start_timestamp: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
+                                                   description='The inclusive start time, '
+                                                               'defines the start of the temporal bound.'),
+        end_timestamp: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
+                                                 description='The exclusive end time, '
+                                                             'defines the end of the temporal bound.'),
         dw=Depends(get_dw)):
     """Return a single heatmap, based on the parameters provided."""
     if srid != 3034:
@@ -121,8 +121,8 @@ def single_heatmap(
     spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
         get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
-    start_date_id = int(start.strftime("%Y%m%d"))
-    end_date_id = int(end.strftime("%Y%m%d"))
+    start_date_id = int(start_timestamp.strftime("%Y%m%d"))
+    end_date_id = int(end_timestamp.strftime("%Y%m%d"))
 
     params = {
         'width': width,
@@ -141,8 +141,8 @@ def single_heatmap(
         'ship_types': ship_types,
         'start_date_id': start_date_id,
         'end_date_id': end_date_id,
-        'start_timestamp': start,
-        'end_timestamp': end,
+        'start_timestamp': start_timestamp,
+        'end_timestamp': end_timestamp,
     }
 
     result, query_time_taken_sec = measure_time(lambda: dw.execute(text(query), params).fetchone())
@@ -153,7 +153,7 @@ def single_heatmap(
     if output_format == SingleOutputFormat.png:
         png, image_time_taken_sec = try_get_png_from_geotiff(
             result[0].tobytes(),
-            title=f"{heatmap_type.value} {start.strftime('%Y-%m-%d')} - {end.strftime('%Y-%m-%d')}"
+            title=f"{heatmap_type.value} {start_timestamp.strftime('%Y-%m-%d')} - {end_timestamp.strftime('%Y-%m-%d')}"
         )
         return PlainTextResponse(png, media_type="image/png",
                                  headers={
@@ -286,22 +286,22 @@ def mapalgebra_heatmap(
                                                      description='The mobile types to include in the first raster.'),
         first_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                                  description='The ship types to include in the first raster.'),
-        first_start: datetime.datetime = Query(default="2021-01-01T00:00:00Z",
-                                               description='The inclusive start of the temporal bound for the '
-                                                           'first raster.'),
-        first_end: datetime.datetime = Query(default="2021-02-01T00:00:00Z",
-                                             description='The exclusive end of the temporal bound for the '
-                                                         'first raster.'),
+        first_start_timestamp: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
+                                                         description='The inclusive start of the temporal bound for '
+                                                                     'the first raster.'),
+        first_end_timestamp: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
+                                                       description='The exclusive end of the temporal bound for the '
+                                                                   'first raster.'),
         second_mobile_types: list[MobileType] = Query(default=[MobileType.class_a, MobileType.class_b],
                                                       description='The mobile types to include in the second raster.'),
         second_ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                                   description='The ship types to include in the second raster.'),
-        second_start: datetime.datetime = Query(default="2021-07-01T00:00:00Z",
-                                                description='The inclusive start of the temporal bound for the '
-                                                            'second raster.'),
-        second_end: datetime.datetime = Query(default="2021-08-01T00:00:00Z",
-                                              description='The exclusive end of the temporal bound for the '
-                                                          'second raster.'),
+        second_start_timestamp: datetime.datetime = Query(default="2022-07-01T00:00:00Z",
+                                                          description='The inclusive start of the temporal bound for '
+                                                                      'the second raster.'),
+        second_end_timestamp: datetime.datetime = Query(default="2022-08-01T00:00:00Z",
+                                                        description='The exclusive end of the temporal bound for the '
+                                                                    'second raster.'),
         dw=Depends(get_dw)
 ):
     """Return a single mapalgebra heatmap, based on the parameters provided."""
@@ -314,10 +314,10 @@ def mapalgebra_heatmap(
     spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
         get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
-    first_start_date_id = int(first_start.strftime("%Y%m%d"))
-    first_end_date_id = int(first_end.strftime("%Y%m%d"))
-    second_start_date_id = int(second_start.strftime("%Y%m%d"))
-    second_end_date_id = int(second_end.strftime("%Y%m%d"))
+    first_start_date_id = int(first_start_timestamp.strftime("%Y%m%d"))
+    first_end_date_id = int(first_end_timestamp.strftime("%Y%m%d"))
+    second_start_date_id = int(second_start_timestamp.strftime("%Y%m%d"))
+    second_end_date_id = int(second_end_timestamp.strftime("%Y%m%d"))
 
     params = {
         'width': width,
@@ -339,14 +339,14 @@ def mapalgebra_heatmap(
         'first_ship_types': first_ship_types,
         'first_start_date_id': first_start_date_id,
         'first_end_date_id': first_end_date_id,
-        'first_start_timestamp': first_start,
-        'first_end_timestamp': first_end,
+        'first_start_timestamp': first_start_timestamp,
+        'first_end_timestamp': first_end_timestamp,
         'second_mobile_types': second_mobile_types,
         'second_ship_types': second_ship_types,
         'second_start_date_id': second_start_date_id,
         'second_end_date_id': second_end_date_id,
-        'second_start_timestamp': second_start,
-        'second_end_timestamp': second_end,
+        'second_start_timestamp': second_start_timestamp,
+        'second_end_timestamp': second_end_timestamp,
     }
 
     result, query_time_taken_sec = measure_time(lambda: dw.execute(text(query), params).fetchone())
@@ -405,12 +405,12 @@ def multi_heatmap(
                                                description='Limits what mobile type the ships must belong to.'),
         ship_types: list[ShipType] = Query(default=[ShipType.cargo, ShipType.passenger],
                                            description='Limits what ship type the ships must belong to.'),
-        start: datetime.datetime = Query(default="2021-01-01T00:00:00Z",
-                                         description='The inclusive start time, '
-                                                     'defines the start of the temporal bound.'),
-        end: datetime.datetime = Query(default="2021-02-01T00:00:00Z",
-                                       description='The exclusive end time, '
-                                                   'defines the end of the temporal bound.'),
+        start_timestamp: datetime.datetime = Query(default="2022-01-01T00:00:00Z",
+                                                   description='The inclusive start time, '
+                                                               'defines the start of the temporal bound.'),
+        end_timestamp: datetime.datetime = Query(default="2022-02-01T00:00:00Z",
+                                                 description='The exclusive end time, '
+                                                             'defines the end of the temporal bound.'),
         dw=Depends(get_dw)
 ):
     """Return a multi heatmap, based on the parameters provided."""
@@ -423,8 +423,8 @@ def multi_heatmap(
     spatial_resolution, x_min, y_min, x_max, y_max, width, height = \
         get_spatial_resolution_and_bounds(dw, spatial_resolution, x_min, y_min, x_max, y_max, enc_cell)
 
-    start_date_id = int(start.strftime("%Y%m%d"))
-    end_date_id = int(end.strftime("%Y%m%d"))
+    start_date_id = int(start_timestamp.strftime("%Y%m%d"))
+    end_date_id = int(end_timestamp.strftime("%Y%m%d"))
 
     params = {
         'width': width,
@@ -443,8 +443,8 @@ def multi_heatmap(
         'ship_types': ship_types,
         'start_date_id': start_date_id,
         'end_date_id': end_date_id,
-        'start_timestamp': start,
-        'end_timestamp': end,
+        'start_timestamp': start_timestamp,
+        'end_timestamp': end_timestamp,
     }
 
     result, query_time_taken_sec = measure_time(lambda: dw.execute(text(query), params).fetchall())
