@@ -39,14 +39,14 @@ FROM (
                 JOIN dim_date dd on fch.date_id = dd.date_id
                 WHERE fch.spatial_resolution = :spatial_resolution
                 AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :heatmap_type_slug)
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= :end_timestamp
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) < :end_timestamp
                 AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= :start_timestamp
                 AND dst.ship_type = ANY (:ship_types)
                 AND dst.mobile_type = ANY (:mobile_types)
                 AND fch.cell_x >= :min_cell_x
-                AND fch.cell_x < :max_cell_x
+                AND fch.cell_x <= :max_cell_x
                 AND fch.cell_y >= :min_cell_y
-                AND fch.cell_y < :max_cell_y
+                AND fch.cell_y <= :max_cell_y
                 AND fch.date_id BETWEEN :start_date_id AND :end_date_id
                 GROUP BY fch.partition_id, dd.year
             ) q0

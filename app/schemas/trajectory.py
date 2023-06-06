@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 from datetime import datetime
+from app.schemas.ship import Ship
 
 # Add example values where appropriate
 
@@ -67,6 +68,7 @@ class BaseTrajectory(BaseModel):
     length: int = Field(description="The length of the trajectory.")
     stopped: bool = Field(description="Whether the trajectory represents a stopped ship or not.")
     navigational_status: str = Field(description="The navigational status of the trajectory.")
+    ship: Ship = Field(description="The ship generating the trajectory.")
 
 
 class MFJSONTrajectoryResponse(BaseTrajectory):

@@ -26,14 +26,14 @@ FROM (
                 JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
                 WHERE fch.spatial_resolution = :spatial_resolution
                 AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :heatmap_type_slug)
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= :first_end_timestamp
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) < :first_end_timestamp
                 AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= :first_start_timestamp
                 AND dst.ship_type = ANY (:first_ship_types)
                 AND dst.mobile_type = ANY (:first_mobile_types)
                 AND fch.cell_x >= :min_cell_x
-                AND fch.cell_x < :max_cell_x
+                AND fch.cell_x <= :max_cell_x
                 AND fch.cell_y >= :min_cell_y
-                AND fch.cell_y < :max_cell_y
+                AND fch.cell_y <= :max_cell_y
                 AND fch.date_id BETWEEN :first_start_date_id AND :first_end_date_id
                 GROUP BY fch.partition_id
             ) q0
@@ -56,14 +56,14 @@ FROM (
                 JOIN dim_ship_type dst on fch.ship_type_id = dst.ship_type_id
                 WHERE fch.spatial_resolution = :spatial_resolution
                 AND fch.heatmap_type_id = (SELECT heatmap_type_id FROM dim_heatmap_type WHERE slug = :heatmap_type_slug)
-                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) <= :second_end_timestamp
+                AND timestamp_from_date_time_id(fch.date_id, fch.time_id) < :second_end_timestamp
                 AND timestamp_from_date_time_id(fch.date_id, fch.time_id) >= :second_start_timestamp
                 AND dst.ship_type = ANY (:second_ship_types)
                 AND dst.mobile_type = ANY (:second_mobile_types)
                 AND fch.cell_x >= :min_cell_x
-                AND fch.cell_x < :max_cell_x
+                AND fch.cell_x <= :max_cell_x
                 AND fch.cell_y >= :min_cell_y
-                AND fch.cell_y < :max_cell_y
+                AND fch.cell_y <= :max_cell_y
                 AND fch.date_id BETWEEN :second_start_date_id AND :second_end_date_id
                 GROUP BY fch.partition_id
             ) q0

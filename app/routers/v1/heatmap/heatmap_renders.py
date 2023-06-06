@@ -2,6 +2,7 @@
 import io
 import multiprocessing
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from rasterio.enums import Resampling
 from typing import List, Tuple
 
 import numpy as np
@@ -15,8 +16,7 @@ import imageio.v2 as imageio
 
 from app.schemas.multi_output_format import MultiOutputFormat
 
-
-satellite = rio.open("qpi/run/references/danish_waters_3034.tiff")
+max_width, max_height = [2000, 2000]
 
 
 def geo_tiff_to_imageio(geo_tiff_bytes: io.BytesIO, title: str, max_value: float):
@@ -89,94 +89,115 @@ def geo_tiff_to_png(
     if can_be_negative:
         norm = colors.SymLogNorm(1)
 
-    with MemoryFile(geo_tiff_bytes) as memfile:
-        with memfile.open() as raster:
-            fig, ax = plt.subplots(dpi=200, layout='tight')
+    with rio.open("qpi/run/references/danish_waters_3034.tiff") as satellite:
+        with MemoryFile(geo_tiff_bytes) as memfile:
+            with memfile.open() as raster:
+                fig, ax = plt.subplots(dpi=200, layout='tight')
 
-            show(
-                satellite,
-                ax=ax,
-                origin='upper', )
+                show(
+                    satellite,
+                    ax=ax,
+                    origin='upper',
+                )
 
-            # use a logarithmic colormap to show raster
-            plot = show(
-                raster,
-                ax=ax, cmap='turbo',
-                norm=norm,
-                interpolation='none',
-            )
+                # scale the raster to fit the max width and height
+                scale = min(max_width / raster.width, max_height / raster.height)
+                data = raster.read(
+                    masked=True,
+                    out_shape=(
+                        raster.count,
+                        int(raster.height * scale),
+                        int(raster.width * scale)
+                    ),
+                    resampling=Resampling.nearest
+                )
 
-            im = plot.get_images()[1]
+                # use a logarithmic colormap to show raster
+                plot = show(
+                    data,
+                    transform=raster.transform * raster.transform.scale(1/scale, 1/scale),
+                    ax=ax, cmap='turbo',
+                    norm=norm,
+                    interpolation='none'
+                )
 
-            vmin, vmax = im.get_clim()
+                im = plot.get_images()[1]
 
-            if vmin == vmax:
-                raise ValueError("Cannot render a heatmap where vmin == vmax.")
+                vmin, vmax = im.get_clim()
 
-            # invert y axis
-            ax.set_ylim(ax.get_ylim()[::-1])
+                if vmin == vmax:
+                    raise ValueError("Cannot render a heatmap where vmin == vmax.")
 
-            if title:
-                plt.title(title)
+                # invert y axis
+                ax.set_ylim(ax.get_ylim()[::-1])
 
-            # get size of im in pixels
-            fig_height, fig_width = im.get_size()
-            is_wider = fig_width > fig_height
-            fig.set_size_inches(fig_width / 100 + (0 if is_wider else 1), fig_height / 100 + (1 if is_wider else 0))
+                if title:
+                    plt.title(title)
 
-            # the colorbar should only be as wide as the image on ax
-            divider = make_axes_locatable(ax)
-            cax = divider.append_axes("bottom" if is_wider else "right", size="5%", pad=0.4)
+                # get size of im in pixels
+                fig_height, fig_width = im.get_size()
+                is_wider = fig_width > fig_height
+                fig.set_size_inches(
+                    fig_width / 100 + (0 if is_wider else 1),
+                    fig_height / 100 + (1 if is_wider else 0)
+                )
 
-            # add colorbar
-            fig.colorbar(im, cax=cax, orientation='horizontal' if is_wider else 'vertical')
+                # the colorbar should only be as wide as the image on ax
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("bottom" if is_wider else "right", size="5%", pad=0.4)
 
-            fig.canvas.draw()
+                # add colorbar
+                fig.colorbar(im, cax=cax, orientation='horizontal' if is_wider else 'vertical')
 
-            image = Image.frombytes('RGB', fig.canvas.get_width_height(), fig.canvas.tostring_rgb())
+                fig.canvas.draw()
 
-            plt.close(fig)
+                image = Image.frombytes('RGB', fig.canvas.get_width_height(), fig.canvas.tostring_rgb())
 
-            # add logos by first adding max(10% of the height or 200px) to the bottom of the image
-            height_to_add = int(max(image.height * 0.1, 100))
+                plt.close(fig)
 
-            # extend the image with the height to add and a white background
-            image = image.crop((0, 0, image.width, image.height + height_to_add))
-            image.paste(
-                Image.new(
-                    'RGB',
-                    (image.width, height_to_add),
-                    (255, 255, 255)
-                ),
-                (0, image.height - height_to_add)
-            )
+                # add logos by first adding max(10% of the height or 200px) to the bottom of the image
+                height_to_add = int(max(image.height * 0.1, 100))
 
-            dipaal_logo = Image.open("qpi/run/references/dipaal.png")
-            daisy_logo = Image.open("qpi/run/references/daisy.png")
-            aau_logo = Image.open("qpi/run/references/aau.png")
-            aau_logo.thumbnail((image.width//3, height_to_add), Image.LANCZOS)
-            daisy_logo.thumbnail((image.width//3, height_to_add), Image.LANCZOS)
-            dipaal_logo.thumbnail((image.width//3, height_to_add), Image.LANCZOS)
+                # extend the image with the height to add and a white background
+                image = image.crop((0, 0, image.width, image.height + height_to_add))
+                image.paste(
+                    Image.new(
+                        'RGB',
+                        (image.width, height_to_add),
+                        (255, 255, 255)
+                    ),
+                    (0, image.height - height_to_add)
+                )
 
-            # Add logos to the image, with AAU logo on the left, daisy on the right, and dipaal in the center
-            image.paste(
-                aau_logo,
-                (10, image.height - height_to_add//2 - aau_logo.height//2-10),
-                aau_logo
-            )
-            image.paste(
-                daisy_logo,
-                (image.width - daisy_logo.width-10, image.height - height_to_add//2 - daisy_logo.height//2-10),
-                daisy_logo
-            )
-            image.paste(
-                dipaal_logo,
-                (image.width//2 - dipaal_logo.width//2, image.height - height_to_add//2 - dipaal_logo.height//2 - 10),
-                dipaal_logo
-            )
+                dipaal_logo = Image.open("qpi/run/references/dipaal.png")
+                daisy_logo = Image.open("qpi/run/references/daisy.png")
+                aau_logo = Image.open("qpi/run/references/aau.png")
+                aau_logo.thumbnail((image.width//3, height_to_add), Image.LANCZOS)
+                daisy_logo.thumbnail((image.width//3, height_to_add), Image.LANCZOS)
+                dipaal_logo.thumbnail((image.width//3, height_to_add), Image.LANCZOS)
 
-            buffer = io.BytesIO()
-            image.save(buffer, format='png')
-            buffer.seek(0)
+                # Add logos to the image, with AAU logo on the left, daisy on the right, and dipaal in the center
+                image.paste(
+                    aau_logo,
+                    (10, image.height - height_to_add//2 - aau_logo.height//2-10),
+                    aau_logo
+                )
+                image.paste(
+                    daisy_logo,
+                    (image.width - daisy_logo.width-10, image.height - height_to_add//2 - daisy_logo.height//2-10),
+                    daisy_logo
+                )
+                image.paste(
+                    dipaal_logo,
+                    (
+                        image.width//2 - dipaal_logo.width//2,
+                        image.height - height_to_add//2 - dipaal_logo.height//2 - 10
+                    ),
+                    dipaal_logo
+                )
 
-            return buffer
+                buffer = io.BytesIO()
+                image.save(buffer, format='png')
+                buffer.seek(0)
+
+                return buffer

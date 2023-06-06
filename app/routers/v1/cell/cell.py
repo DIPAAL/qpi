@@ -32,17 +32,18 @@ def cell_facts(
         y_max: int = Query(example='3485000',
                            description='Defines the "top side" of the bounding rectangle,'
                            ' coordinates must match the provided "srid".'),
-        cell_size: SpatialResolution = Path(description='Defines the spatial resolution of the resulting cell facts.'),
+        cell_size: SpatialResolution = Path(example=SpatialResolution.five_kilometers,
+                                            description='Defines the spatial resolution of the resulting cell facts.'),
         srid: int = Query(default=3034,
                           description='The srid projection used for the defined bounding rectangle.'),
-        end_timestamp: datetime = Query(default=datetime.max,
-                                        example='2022-01-01T00:00:00Z',
-                                        description='The inclusive timestamp that defines'
-                                        ' the end temporal bound of the result.'),
         start_timestamp: datetime = Query(default=datetime.min,
                                           example='2022-01-01T00:00:00Z',
                                           description='The inclusive timestamp that defines'
-                                          ' the start temporal bound of the result.'),
+                                          ' the start of the temporal bound.'),
+        end_timestamp: datetime = Query(default=datetime.max,
+                                        example='2022-02-01T00:00:00Z',
+                                        description='The inclusive timestamp that defines'
+                                        ' the end of the temporal bound.'),
         stopped: List[bool] = Query(default=[True, False], description='Looking at stopped and/or moving ships'),
         limit: int = Query(default=1000, ge=0, description='Limits the number of results returned.'),
         offset: int = Query(default=0, ge=0, description='Specifies the offset of the first result to return.'),
@@ -58,6 +59,8 @@ def cell_facts(
         'ymax': y_max,
         'srid': srid,
         'stopped': stopped,
+        'start_date_id': int(start_timestamp.strftime("%Y%m%d")),
+        'end_date_id': int(end_timestamp.strftime("%Y%m%d")),
         'end_timestamp': end_timestamp,
         'start_timestamp': start_timestamp,
         'limit': limit,
