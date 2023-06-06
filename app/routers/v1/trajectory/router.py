@@ -86,7 +86,7 @@ async def get_trajectories(
                                      description="If the result must represents stopped ships."
                                                  "\nIf not provided, both stopped and "
                                                  "non-stopped ships are represented."),
-        crop: bool = Query(default=False,
+        crop: bool = Query(default=True,
                            description="Whether to crop spatio-temporal and temporal data in the result "
                                        "to the spatio-temporal bounds. "
                                        "If not provided, the result is not cropped."),
