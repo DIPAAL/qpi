@@ -18,7 +18,27 @@ SELECT ft.trajectory_sub_id,
        ft.duration,
        ft.length,
        ft.infer_stopped as stopped,
-       dns.nav_status as navigational_status
+       dns.nav_status as navigational_status,
+       JSON_BUILD_OBJECT(
+           'ship_id', ds.ship_id,
+           'name', ds.name,
+           'callsign', ds.callsign,
+           'mmsi', ds.mmsi,
+           'imo', ds.imo,
+           'flag_region', ds.flag_region,
+           'flag_state', ds.flag_state,
+           'mobile_type', dst.mobile_type,
+           'ship_type', dst.ship_type,
+           'location_system_type', ds.location_system_type,
+           'a', ds.a,
+           'b', ds.b,
+           'c', ds.c,
+           'd', ds.d,
+           'length', ds.length,
+           'width', ds.width
+       ) as ship
 FROM fact_trajectory as ft
 JOIN dim_trajectory as dt ON ft.trajectory_sub_id = dt.trajectory_sub_id AND ft.start_date_id = dt.date_id
 JOIN dim_nav_status as dns ON ft.nav_status_id = dns.nav_status_id
+JOIN dim_ship as ds ON ft.ship_id = ds.ship_id
+JOIN dim_ship_type as dst ON ds.ship_type_id = dst.ship_type_id
