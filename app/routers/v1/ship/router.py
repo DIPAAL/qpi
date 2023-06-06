@@ -355,7 +355,7 @@ def add_cell_from_where_clause_to_query(qb: QueryBuilder, placeholders: dict, se
 
     # Add partition elimination
     if temporal_bounds:
-        qb.add_where_from_string("fc.entry_date_id BETWEEN :from_date AND :to_date")
+        qb.add_where_from_string("fc.entry_date_id BETWEEN :start_date AND :end_date")
 
     if temporal_bounds and spatial_bounds:
         qb.add_where_from_string("STBOX(ST_MakeEnvelope(:xmin, :ymin, :xmax, :ymax, 3034), "

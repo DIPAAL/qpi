@@ -36,14 +36,14 @@ def cell_facts(
                                             description='Defines the spatial resolution of the resulting cell facts.'),
         srid: int = Query(default=3034,
                           description='The srid projection used for the defined bounding rectangle.'),
-        end_timestamp: datetime = Query(default=datetime.max,
-                                        example='2022-02-01T00:00:00Z',
-                                        description='The inclusive timestamp that defines'
-                                        ' the end temporal bound of the result.'),
         start_timestamp: datetime = Query(default=datetime.min,
                                           example='2022-01-01T00:00:00Z',
                                           description='The inclusive timestamp that defines'
                                           ' the start temporal bound of the result.'),
+        end_timestamp: datetime = Query(default=datetime.max,
+                                        example='2022-02-01T00:00:00Z',
+                                        description='The inclusive timestamp that defines'
+                                        ' the end temporal bound of the result.'),
         stopped: List[bool] = Query(default=[True, False], description='Looking at stopped and/or moving ships'),
         limit: int = Query(default=1000, ge=0, description='Limits the number of results returned.'),
         offset: int = Query(default=0, ge=0, description='Specifies the offset of the first result to return.'),
