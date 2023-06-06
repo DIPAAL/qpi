@@ -134,7 +134,7 @@ async def get_trajectories(
     qb.add_string("ORDER BY ft.trajectory_sub_id OFFSET :offset LIMIT :limit;")
 
     final_query = qb.get_query_str()
-    print(final_query)
+
     return JSONResponse(response_json(final_query, dw, params))
 
 
