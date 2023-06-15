@@ -14,14 +14,15 @@ spec:
       labels:
         app: dipaal-api
     spec:
-      nodeAffinity:
-        required:
-          nodeSelectorTerms:
-          - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-              - dipaal1
+      affinity:
+        nodeAffinity:
+          required:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - dipaal1
       imagePullSecrets:
         - name: regcred
       containers:
@@ -37,6 +38,10 @@ spec:
           - name: TUNNEL_URL
             value: http://localhost:8000
         imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "10G"
+
         volumeMounts:
           - name: cloudflare-cert
             mountPath: /etc/cloudflared/cert.pem
