@@ -429,6 +429,7 @@ async def ship_by_id(
 ):
     """Get information about a ship by its ID."""
     qb = QueryBuilder(SQL_PATH)
+    qb.add_sql("select_ship.sql")
     qb.add_sql("ship_by_id.sql")
     final_query = qb.get_query_str()
     return JSONResponse(response_dict(final_query, dw, {"id": ship_id}))
