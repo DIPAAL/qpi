@@ -14,6 +14,14 @@ spec:
       labels:
         app: dipaal-api
     spec:
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - dipaal1
       imagePullSecrets:
         - name: regcred
       containers:
