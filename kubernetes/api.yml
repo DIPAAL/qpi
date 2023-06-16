@@ -30,9 +30,6 @@ spec:
         image: ${IMAGE_NAME}
         command: ["uvicorn", "app.api_main:app"]
         imagePullPolicy: IfNotPresent
-        resources:
-          limits:
-            memory: "10G"
       - name: cloudflare
         image: firecow/cloudflared:2022.8.0-1
         env:
