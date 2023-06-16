@@ -16,13 +16,13 @@ spec:
     spec:
       affinity:
         nodeAffinity:
-          required:
+          requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - dipaal1
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - dipaal1
       imagePullSecrets:
         - name: regcred
       containers:
@@ -30,6 +30,9 @@ spec:
         image: ${IMAGE_NAME}
         command: ["uvicorn", "app.api_main:app"]
         imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "10G"
       - name: cloudflare
         image: firecow/cloudflared:2022.8.0-1
         env:
@@ -39,9 +42,6 @@ spec:
             value: http://localhost:8000
         imagePullPolicy: IfNotPresent
         resources:
-          limits:
-            memory: "10G"
-
         volumeMounts:
           - name: cloudflare-cert
             mountPath: /etc/cloudflared/cert.pem
