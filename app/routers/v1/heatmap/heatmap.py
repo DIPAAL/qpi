@@ -252,7 +252,7 @@ def mapalgebra_heatmap(
         # Query parameters
         output_format: SingleOutputFormat = Query(default=SingleOutputFormat.tiff,
                                                   description='Output format of the heatmap.'),
-        map_algebra_expr: str = Query(default="[rast1.val]-[rast2.val]",
+        map_algebra_expr: str = Query(default="[rast2.val]-[rast1.val]",
                                       description='A PostgreSQL algebraic expression involving two rasters and '
                                                   'functions/operators that defines the pixel value when pixels '
                                                   'intersect.'),
