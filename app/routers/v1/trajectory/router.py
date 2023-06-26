@@ -98,9 +98,10 @@ async def get_trajectories(
     """Get trajectories based on the provided parameters."""
     params = {"offset": offset, "limit": limit}
     trajectory_params = {"infer_stopped": stopped}
+    trajectory_dim_params = {"destination": destination}
     ship_params = {"mmsi": mmsi, "imo": imo, "name": name, "country": country, "callsign": callsign}
     ship_type_params = {"mobile_type": get_values_from_enum_list(mobile_type, MobileType) if mobile_type else None}
-    nav_status_params = {"destination": destination}
+    nav_status_params = {}
     temporal_params = {"start_timestamp": start_timestamp, "end_timestamp": end_timestamp}
     # SRID is not required to be complete, and is therefore not part of this dict.
     spatial_params = {"xmin": x_min, "ymin": y_min, "xmax": x_max, "ymax": y_max}
@@ -115,7 +116,8 @@ async def get_trajectories(
     _add_trajectory_query(crop, qb, time_series_representation_type)
 
     # If certain parameters are provided, then they are added to the query as a WHERE/AND clause, filtering results.
-    _filter_operator(qb, params, {"ds": ship_params, "dst": ship_type_params, "dns": nav_status_params}, "IN")
+    _filter_operator(qb, params, {"ds": ship_params, "dst": ship_type_params, "dns": nav_status_params,
+                                  "dt": trajectory_dim_params}, "IN")
     _filter_operator(qb, params, {"ft": trajectory_params}, "=")
 
     # Check if any temporal or spatial parameters are provided and update the parameters accordingly.
