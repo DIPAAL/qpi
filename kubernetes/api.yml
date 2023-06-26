@@ -28,7 +28,7 @@ spec:
       containers:
       - name: api
         image: ${IMAGE_NAME}
-        command: ["uvicorn", "app.api_main:app"]
+        command: ["uvicorn", "--workers", "4", "app.api_main:app"]
         imagePullPolicy: IfNotPresent
       - name: cloudflare
         image: firecow/cloudflared:2022.8.0-1
