@@ -386,7 +386,7 @@ def multi_heatmap(
         output_format: MultiOutputFormat = Query(default=MultiOutputFormat.mp4,
                                                  description='The output format of result.'),
         fps: int = Query(default=10,
-                         description='The frames per second of the result. Only applicable for mp4 output format.'),
+                         description='The frames per second of the result.'),
         x_min: int = Query(default=3600000,
                            description='Defines the "left side" of the bounding rectangle, '
                                        'coordinates must match the provided "srid" parameter.'),
